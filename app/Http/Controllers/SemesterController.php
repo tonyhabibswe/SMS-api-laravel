@@ -2,112 +2,121 @@
 
 namespace App\Http\Controllers;
 
+use App\DTOs\SemesterCreateDTO;
+use App\DTOs\SemesterEditDTO;
 use App\Http\Requests\SemesterCreateRequest;
 use App\Http\Requests\SemesterEditRequest;
-use App\Models\Course;
-use App\Models\CourseSection;
-use App\Models\Semester;
+use App\Services\CourseSectionService;
+use App\Services\SemesterService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class SemesterController extends Controller
 {
+
+    protected SemesterService $semesterService;
+    protected CourseSectionService $courseSectionService;
+
+
+    public function __construct(SemesterService $semesterService, CourseSectionService $courseSectionService)
+    {
+        $this->semesterService = $semesterService;
+        $this->courseSectionService = $courseSectionService;
+    }
+
+
+    /**
+     * List all semesters.
+     *
+     * @return JsonResponse
+     */
     public function list(): JsonResponse
     {
-        // Retrieve all semesters ordered by descending ID
-        $semesters = Semester::orderByDesc('id')->get();
+        // Get DTOs from the service layer
+        $semesterListDTOs = $this->semesterService->listSemesters();
 
-        // Return the result in a JSON response
-        return response()->json($semesters, 200);
+        // Return the DTOs as JSON with a 200 status code
+        return response()->json($semesterListDTOs, 200);
     }
 
+    /**
+     * Create a new semester along with optional holidays.
+     *
+     * @param SemesterCreateRequest $request
+     * @return JsonResponse
+     */
     public function create(SemesterCreateRequest $request): JsonResponse
     {
-        // Create a new Semester instance with validated data
-        $semester = Semester::create([
-            'name'       => $request->name,
-            'start_date' => $request->start_date,
-            'end_date'   => $request->end_date,
-        ]);
+        // Build a DTO from the validated request data.
+        $createDTO = new SemesterCreateDTO(
+            $request->name,
+            $request->start_date,
+            $request->end_date,
+            $request->holidays ?? null
+        );
 
-        // If the request includes holidays, create holiday records for each date.
-        if ($request->has('holidays')) {
-            foreach ($request->holidays as $holidayDate) {
-                $semester->holidays()->create([
-                    'date' => $holidayDate,
-                    // Optionally, you can set a default name or allow an extended structure:
-                    'name' => null,
-                ]);
-            }
-        }
+        // Use the service layer to create the semester.
+        $semesterListDTO = $this->semesterService->createSemester($createDTO);
 
-        // Return the created semester along with its holidays
-        return response()->json($semester->load('holidays'), 201);
+        return response()->json($semesterListDTO, 201);
     }
 
+    /**
+     * Update a semester.
+     *
+     * @param SemesterEditRequest $request
+     * @return JsonResponse
+     */
     public function edit(SemesterEditRequest $request): JsonResponse
     {
-        // Find the semester by ID
-        $semester = Semester::find($request->id);
-        
-        // If semester not found, return a 404 error (This is handled by the `exists` rule in validation as well)
-        if (!$semester) {
+        // Build the edit DTO from the validated request data.
+        $editDTO = new SemesterEditDTO(
+            $request->id,
+            $request->name
+        );
+
+        // Call the service layer to update the semester.
+        $updatedSemesterDTO = $this->semesterService->updateSemester($editDTO);
+
+        // If no semester was found, return a 404 error.
+        if (!$updatedSemesterDTO) {
             return response()->json(['message' => 'Semester not found'], 404);
         }
 
-        // Update the semester's name
-        $semester->name = $request->name;
-
-        // Save the updated semester
-        $semester->save();
-
-        // Return a success response
-        return response()->json(['message' => 'Semester updated successfully'], 200);
+        // Return a success response with the updated semester DTO.
+        return response()->json([
+            'message'  => 'Semester updated successfully',
+            'semester' => $updatedSemesterDTO
+        ], 200);
     }
 
+    /**
+     * Delete a semester.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     public function delete(int $id): JsonResponse
     {
-        // Find the semester by ID
-        $semester = Semester::find($id);
+        $deleted = $this->semesterService->deleteSemester($id);
 
-        // Check if the semester exists
-        if (!$semester) {
+        if (!$deleted) {
             return response()->json(['message' => 'Semester not found'], 404);
         }
 
-        // Delete the semester
-        $semester->delete();
-
-        // Return a success response
         return response()->json(['message' => 'Semester deleted successfully'], 200);
     }
 
+
+    /**
+     * List course sections for a given semester ID.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     public function listCoursesBySemesterId(int $id): JsonResponse
     {
-        // Retrieve courses with semester_id = $semesterId and eager load the first session
-        $courseSections = CourseSection::where('semester_id', $id)
-                                        ->with([
-                                            'firstSession',
-                                            'course:code,name'  // Eager load only the specified columns from courses table
-                                        ])
-                                        ->get();
+        $dtoCollection = $this->courseSectionService->listBySemesterId($id);
 
-        // Optionally transform data if you only need specific fields
-        $result = $courseSections->map(function ($courseSections) {
-            return [
-                'id' => $courseSections->id,
-                'code' => $courseSections->course->code,
-                'name' => $courseSections->course->name,
-                'time' => $courseSections->time,
-                'session' => $courseSections->firstSession ? [
-                    'id' => $courseSections->firstSession->id,
-                    'room' => $courseSections->firstSession->room,
-                    'session_start' => $courseSections->firstSession->session_start,
-                    'session_end' => $courseSections->firstSession->session_end,
-                ] : null,
-            ];
-        });
-
-        return response()->json($result, 200);
+        return response()->json($dtoCollection, 200);
     }
 }
