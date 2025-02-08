@@ -25,13 +25,24 @@ class SemesterController extends Controller
     {
         // Create a new Semester instance with validated data
         $semester = Semester::create([
-            'name' => $request->name,
+            'name'       => $request->name,
             'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
+            'end_date'   => $request->end_date,
         ]);
 
-        // Return a response with a 201 status and the created semester data
-        return response()->json($semester, 201);
+        // If the request includes holidays, create holiday records for each date.
+        if ($request->has('holidays')) {
+            foreach ($request->holidays as $holidayDate) {
+                $semester->holidays()->create([
+                    'date' => $holidayDate,
+                    // Optionally, you can set a default name or allow an extended structure:
+                    'name' => null,
+                ]);
+            }
+        }
+
+        // Return the created semester along with its holidays
+        return response()->json($semester->load('holidays'), 201);
     }
 
     public function edit(SemesterEditRequest $request): JsonResponse
