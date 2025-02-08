@@ -2,31 +2,37 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attendance;
+use App\DTOs\Attendance\AttendanceUpdateDTO;
 use App\Http\Requests\AttendanceUpdateRequest;
+use App\Services\AttendanceService;
 use Illuminate\Http\JsonResponse;
 
 class AttendanceController extends Controller
 {
+    protected AttendanceService $attendanceService;
+
+    public function __construct(AttendanceService $attendanceService)
+    {
+        $this->attendanceService = $attendanceService;
+    }
+
     /**
      * Update the attendance value.
      *
-     * @param  AttendanceUpdateRequest  $request
-     * @param  int  $id
+     * @param AttendanceUpdateRequest $request
+     * @param int $id
      * @return JsonResponse
      */
     public function update(AttendanceUpdateRequest $request, int $id): JsonResponse
     {
-        // Find the attendance record by id
-        $attendance = Attendance::find($id);
+        // Build the DTO using the validated request data and the route parameter.
+        $dto = new AttendanceUpdateDTO($id, $request->attendance);
         
-        if (!$attendance) {
+        // Attempt to update the attendance.
+        $updated = $this->attendanceService->updateAttendance($dto);
+        if (!$updated) {
             return response()->json(['message' => 'Attendance not found'], 404);
         }
-        
-        // Update the attendance value using validated data
-        $attendance->value = $request->attendance;
-        $attendance->save();
         
         return response()->json(['message' => 'Ok'], 200);
     }

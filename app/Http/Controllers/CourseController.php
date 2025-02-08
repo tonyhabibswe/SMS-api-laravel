@@ -2,67 +2,97 @@
 
 namespace App\Http\Controllers;
 
+use App\DTOs\Course\CourseCreateDTO;
+use App\DTOs\Course\CourseEditDTO;
 use App\Http\Requests\CourseCreateRequest;
 use App\Http\Requests\CourseEditRequest;
 use App\Models\Course;
+use App\Services\CourseService;
 use Illuminate\Http\JsonResponse;
 
 class CourseController extends Controller
 {
+    protected CourseService $courseService;
+
+    public function __construct(CourseService $courseService)
+    {
+        $this->courseService = $courseService;
+    }
+
     /**
      * List all courses.
+     *
+     * @return JsonResponse
      */
     public function list(): JsonResponse
     {
-        $courses = Course::orderBy('id')->get();
-        return response()->json($courses, 200);
+        $courseDTOs = $this->courseService->listCourses();
+        return response()->json($courseDTOs, 200);
     }
 
     /**
      * Create a new course.
+     *
+     * @param CourseCreateRequest $request
+     * @return JsonResponse
      */
     public function create(CourseCreateRequest $request): JsonResponse
     {
-        // The request is already validated via CourseCreateRequest.
+        // The request is already validated by CourseCreateRequest.
         $validatedData = $request->validated();
 
-        // Create the course.
-        $course = Course::create($validatedData);
+        // Build the DTO from the validated data.
+        $dto = new CourseCreateDTO(
+            $validatedData['code'],
+            $validatedData['name']
+        );
 
-        return response()->json($course, 201);
+        // Use the service layer to create the course.
+        $courseDTO = $this->courseService->createCourse($dto);
+
+        // Return the created course DTO with a 201 status code.
+        return response()->json($courseDTO, 201);
     }
 
     /**
      * Edit an existing course.
+     *
+     * @param CourseEditRequest $request
+     * @param int $id
+     * @return JsonResponse
      */
     public function edit(CourseEditRequest $request, int $id): JsonResponse
     {
-        // Find the course by its id.
-        $course = Course::find($id);
-        if (!$course) {
+        // Build the DTO from the validated request data and route parameter.
+        $editDTO = new CourseEditDTO(
+            $id,
+            $request->input('code'),
+            $request->input('name')
+        );
+        
+        // Call the service to update the course.
+        $updatedCourseDTO = $this->courseService->updateCourse($editDTO);
+        
+        if (!$updatedCourseDTO) {
             return response()->json(['message' => 'Course not found'], 404);
         }
-
-        // Validate the request and update the course.
-        $validatedData = $request->validated();
-        $course->update($validatedData);
-
-        return response()->json($course, 200);
+        
+        return response()->json($updatedCourseDTO, 200);
     }
 
     /**
      * Delete a course.
+     *
+     * @param int $id
+     * @return JsonResponse
      */
     public function delete(int $id): JsonResponse
     {
-        // Find the course record.
-        $course = Course::find($id);
-        if (!$course) {
+        $deleted = $this->courseService->deleteCourse($id);
+
+        if (!$deleted) {
             return response()->json(['message' => 'Course not found'], 404);
         }
-
-        // Delete the course.
-        $course->delete();
 
         return response()->json(['message' => 'Course deleted successfully'], 200);
     }
