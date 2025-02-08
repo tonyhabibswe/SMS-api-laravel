@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\DTOs\CourseSection\CourseSectionListDTO;
 use App\Repositories\CourseSectionRepository;
-use App\DTOs\CourseSectionListDTO;
 use Illuminate\Support\Collection;
 
 class CourseSectionService

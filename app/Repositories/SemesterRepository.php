@@ -2,9 +2,9 @@
 
 namespace App\Repositories;
 
+use App\DTOs\Semester\SemesterCreateDTO;
+use App\DTOs\Semester\SemesterEditDTO;
 use App\Models\Semester;
-use App\DTOs\SemesterCreateDTO;
-use App\DTOs\SemesterEditDTO;
 use Illuminate\Support\Collection;
 
 class SemesterRepository

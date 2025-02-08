@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\DTOs\Semester\SemesterCreateDTO;
+use App\DTOs\Semester\SemesterEditDTO;
+use App\DTOs\Semester\SemesterListDTO;
 use App\Repositories\SemesterRepository;
-use App\DTOs\SemesterCreateDTO;
-use App\DTOs\SemesterEditDTO;
-use App\DTOs\SemesterListDTO;
 
 class SemesterService
 {

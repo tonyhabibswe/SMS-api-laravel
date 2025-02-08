@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\DTOs\SemesterCreateDTO;
-use App\DTOs\SemesterEditDTO;
+use App\DTOs\Semester\SemesterCreateDTO;
+use App\DTOs\Semester\SemesterEditDTO;
 use App\Http\Requests\SemesterCreateRequest;
 use App\Http\Requests\SemesterEditRequest;
 use App\Services\CourseSectionService;
