@@ -4,23 +4,20 @@ namespace App\Http\Controllers;
 
 use App\DTOs\CourseSection\CourseSectionCreateDTO;
 use App\DTOs\CourseSection\CourseSectionEditDTO;
+use App\DTOs\ErrorResponseDTO;
 use App\DTOs\Session\SessionCreateDTO;
 use App\DTOs\Student\StudentCreateDTO;
+use App\DTOs\SuccessResponseDTO;
 use App\Http\Requests\CourseSectionCreateRequest;
 use App\Http\Requests\CourseSectionEditRequest;
 use App\Http\Requests\ImportStudentsRequest;
 use App\Http\Requests\SessionCreateRequest;
 use App\Http\Requests\StudentCreateRequest;
-use App\Models\Attendance;
-use App\Models\CourseSection;
-use App\Models\CourseSession;
-use App\Models\Student;
 use App\Services\CourseSectionService;
 use App\Services\CourseSessionService;
 use App\Services\StudentAttendanceService;
 use App\Services\StudentImportService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 
 class CourseSectionController extends Controller
 {
@@ -66,10 +63,11 @@ class CourseSectionController extends Controller
         try {
             $courseSection = $this->courseSectionService->createCourseSection($dto);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            $responseDTO = new ErrorResponseDTO(400, $e->getMessage(), []);
+            return response()->json($responseDTO, 400);
         }
-
-        return response()->json($courseSection, 201);
+        $responseDTO = new SuccessResponseDTO(201, 'Course section created successfully', $courseSection);
+        return response()->json($responseDTO, 201);
     }
 
     /**
@@ -91,10 +89,12 @@ class CourseSectionController extends Controller
         $updatedCourseSectionDTO = $this->courseSectionService->updateCourseSection($editDTO);
 
         if (!$updatedCourseSectionDTO) {
-            return response()->json(['message' => 'Course section not found'], 404);
+            $responseDTO = new ErrorResponseDTO(404, "Course section not found", []);
+            return response()->json($responseDTO, 404);
         }
 
-        return response()->json($updatedCourseSectionDTO, 200);
+        $responseDTO = new SuccessResponseDTO(200, 'Course section edited successfully', $updatedCourseSectionDTO);
+        return response()->json($responseDTO, 200);
     }
 
     /**
@@ -108,10 +108,12 @@ class CourseSectionController extends Controller
         $deleted = $this->courseSectionService->deleteCourseSection($id);
 
         if (!$deleted) {
-            return response()->json(['message' => 'Course section not found'], 404);
+            $responseDTO = new ErrorResponseDTO(404, "Course section not found", []);
+            return response()->json($responseDTO, 404);
         }
 
-        return response()->json(['message' => 'Course section deleted successfully'], 200);
+        $responseDTO = new SuccessResponseDTO(200, 'Course section deleted successfully', []);
+        return response()->json($responseDTO, 200);
     }
 
 
@@ -143,10 +145,12 @@ class CourseSectionController extends Controller
         try {
             $student = $this->studentAttendanceService->createStudentWithAttendances($dto, $id);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            $responseDTO = new ErrorResponseDTO(400, $e->getMessage(), []);
+            return response()->json($responseDTO, 400);
         }
 
-        return response()->json($student, 201);
+        $responseDTO = new SuccessResponseDTO(201, 'Student created successfully', $student);
+        return response()->json($responseDTO, 201);
     }
 
 
@@ -164,10 +168,12 @@ class CourseSectionController extends Controller
         try {
             $this->studentImportService->importStudents($request->file('file'), $id);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            $responseDTO = new ErrorResponseDTO(400, $e->getMessage(), []);
+            return response()->json($responseDTO, 400);
         }
         
-        return response()->json(['message' => 'Students imported and attendance records created successfully.'], 200);
+        $responseDTO = new SuccessResponseDTO(200, 'Students imported and attendance records created successfully', []);
+        return response()->json($responseDTO, 200);
     }
 
 
@@ -193,11 +199,13 @@ class CourseSectionController extends Controller
         try {
             $session = $this->courseSessionService->createSessionForCourseSection($dto, $id);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            $reponseDTO = new ErrorResponseDTO(400, $e->getMessage(), []);
+            return response()->json($reponseDTO, 400);
         }
         
+        $responseDTO = new SuccessResponseDTO(201, 'Session created successfully', $session);
         // Return the new session with a 201 (Created) status code.
-        return response()->json($session, 201);
+        return response()->json($responseDTO, 201);
     }
 
     /**
@@ -209,7 +217,8 @@ class CourseSectionController extends Controller
     public function getSessions(int $id): JsonResponse
     {
         $sessionDTOs = $this->courseSessionService->getSessionsUntilToday($id);
-        return response()->json($sessionDTOs, 200);
+        $responseDTO = new SuccessResponseDTO(200, 'Sessions retrieved successfully', $sessionDTOs);
+        return response()->json($responseDTO, 200);
     }
 
     /**
@@ -221,7 +230,8 @@ class CourseSectionController extends Controller
     public function getStudents(int $id): JsonResponse
     {
         $attendanceDTOs = $this->studentAttendanceService->getStudentAttendanceSummary($id);
-        return response()->json($attendanceDTOs, 200);
+        $reponseDTO = new SuccessResponseDTO(200, 'Student attendance summary retrieved successfully', $attendanceDTOs);
+        return response()->json($reponseDTO, 200);
     }
 
 }

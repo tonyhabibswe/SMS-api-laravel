@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\DTOs\ErrorResponseDTO;
 use App\DTOs\Semester\SemesterCreateDTO;
 use App\DTOs\Semester\SemesterEditDTO;
+use App\DTOs\SuccessResponseDTO;
 use App\Http\Requests\SemesterCreateRequest;
 use App\Http\Requests\SemesterEditRequest;
 use App\Services\CourseSectionService;
@@ -33,9 +35,9 @@ class SemesterController extends Controller
     {
         // Get DTOs from the service layer
         $semesterListDTOs = $this->semesterService->listSemesters();
-
+        $responseDTO = new SuccessResponseDTO(200, "Operation Successful", $semesterListDTOs);
         // Return the DTOs as JSON with a 200 status code
-        return response()->json($semesterListDTOs, 200);
+        return response()->json($responseDTO, 200);
     }
 
     /**
@@ -56,8 +58,9 @@ class SemesterController extends Controller
 
         // Use the service layer to create the semester.
         $semesterListDTO = $this->semesterService->createSemester($createDTO);
+        $responseDTO = new SuccessResponseDTO(201, "Semester created successfully.", $semesterListDTO);
 
-        return response()->json($semesterListDTO, 201);
+        return response()->json($responseDTO, 201);
     }
 
     /**
@@ -66,27 +69,23 @@ class SemesterController extends Controller
      * @param SemesterEditRequest $request
      * @return JsonResponse
      */
-    public function edit(SemesterEditRequest $request): JsonResponse
+    public function edit(int $id, SemesterEditRequest $request): JsonResponse
     {
         // Build the edit DTO from the validated request data.
-        $editDTO = new SemesterEditDTO(
-            $request->id,
-            $request->name
-        );
+        $editDTO = new SemesterEditDTO($request->name);
 
         // Call the service layer to update the semester.
-        $updatedSemesterDTO = $this->semesterService->updateSemester($editDTO);
+        $updatedSemesterDTO = $this->semesterService->updateSemester($id, $editDTO);
 
         // If no semester was found, return a 404 error.
         if (!$updatedSemesterDTO) {
-            return response()->json(['message' => 'Semester not found'], 404);
+            $responseDTO = new ErrorResponseDTO(404, "Semester not found", []);
+            return response()->json($responseDTO, 404);
         }
+        $responseDTO = new SuccessResponseDTO(200, "Semester updated successfully.", $updatedSemesterDTO);
 
         // Return a success response with the updated semester DTO.
-        return response()->json([
-            'message'  => 'Semester updated successfully',
-            'semester' => $updatedSemesterDTO
-        ], 200);
+        return response()->json($responseDTO, 200);
     }
 
     /**
@@ -100,10 +99,12 @@ class SemesterController extends Controller
         $deleted = $this->semesterService->deleteSemester($id);
 
         if (!$deleted) {
-            return response()->json(['message' => 'Semester not found'], 404);
+            $responseDTO = new ErrorResponseDTO(404, "Semester not found", []);
+            return response()->json($responseDTO, 404);
         }
 
-        return response()->json(['message' => 'Semester deleted successfully'], 200);
+        $responseDTO = new SuccessResponseDTO(200, "Semester deleted successfully.", []);
+        return response()->json($responseDTO, 200);
     }
 
 
@@ -117,6 +118,8 @@ class SemesterController extends Controller
     {
         $dtoCollection = $this->courseSectionService->listBySemesterId($id);
 
-        return response()->json($dtoCollection, 200);
+        $responseDTO = new SuccessResponseDTO(200, "Operation successful.", $dtoCollection);
+
+        return response()->json($responseDTO, 200);
     }
 }

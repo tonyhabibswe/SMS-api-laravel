@@ -50,12 +50,11 @@ class SemesterService
      * @param SemesterEditDTO $dto
      * @return SemesterListDTO|null
      */
-    public function updateSemester(SemesterEditDTO $dto): ?SemesterListDTO
+    public function updateSemester(int $id, SemesterEditDTO $dto): ?SemesterListDTO
     {
-        $semester = $this->semesterRepository->updateSemester($dto);
+        $semester = $this->semesterRepository->updateSemester($id, $dto);
         if ($semester) {
             // Reload relationships if needed (for example, holidays)
-            $semester->load('holidays');
             return SemesterListDTO::fromModel($semester);
         }
         return null;

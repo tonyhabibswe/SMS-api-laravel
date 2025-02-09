@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Models\CourseSession;
 use App\Models\Semester;
 use App\Repositories\CourseSectionRepository;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class CourseSectionService
@@ -29,7 +30,6 @@ class CourseSectionService
     public function listBySemesterId(int $semesterId): Collection
     {
         $courseSections = $this->courseSectionRepository->getBySemesterId($semesterId);
-
         return $courseSections->map(function ($courseSection) {
             return CourseSectionListDTO::fromModel($courseSection);
         });
@@ -58,7 +58,6 @@ class CourseSectionService
 
         // Prepare an array of holiday dates.
         $holidayDates = $semester->holidays->pluck('date')->toArray();
-
         // Build a formatted time string for the section.
         $courseSectionTime = implode('', array_map('getDayAbbreviation', $dto->course_days))
             . " {$dto->start_session_time}-{$dto->end_session_time}";
@@ -71,11 +70,15 @@ class CourseSectionService
             'time'         => $courseSectionTime,
         ]);
 
+        // Parse the start and end dates of the semester to carbon date objects.
+        $startDate = Carbon::parse($semester->start_date);
+        $endDate = Carbon::parse($semester->end_date);
+
         // Generate sessions for each day between the semester's start and end dates.
         $sessions = [];
-        $diffDays = $semester->end_date->diffInDays($semester->start_date);
+        $diffDays = $startDate->diffInDays($endDate);
         for ($dayOffset = 0; $dayOffset <= $diffDays; $dayOffset++) {
-            $date = $semester->start_date->copy()->addDays($dayOffset);
+            $date = $startDate->copy()->addDays($dayOffset);
 
             // Skip if this date is a holiday.
             if (in_array($date->toDateString(), $holidayDates)) {

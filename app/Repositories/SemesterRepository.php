@@ -53,10 +53,10 @@ class SemesterRepository
      * @param SemesterEditDTO $dto
      * @return Semester|null
      */
-    public function updateSemester(SemesterEditDTO $dto)
+    public function updateSemester(int $id, SemesterEditDTO $dto)
     {
         // Find the semester by its id.
-        $semester = Semester::find($dto->id);
+        $semester = Semester::find($id);
         if (!$semester) {
             return null;
         }

@@ -38,8 +38,8 @@ class SemesterListDTO
         return new self(
             $semester->id,
             $semester->name,
-            $semester->start_date->toDateString(),
-            $semester->end_date->toDateString(),
+            $semester->start_date,
+            $semester->end_date,
             $holidays
         );
     }

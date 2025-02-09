@@ -4,9 +4,10 @@ namespace App\Http\Controllers;
 
 use App\DTOs\Course\CourseCreateDTO;
 use App\DTOs\Course\CourseEditDTO;
+use App\DTOs\ErrorResponseDTO;
+use App\DTOs\SuccessResponseDTO;
 use App\Http\Requests\CourseCreateRequest;
 use App\Http\Requests\CourseEditRequest;
-use App\Models\Course;
 use App\Services\CourseService;
 use Illuminate\Http\JsonResponse;
 
@@ -27,7 +28,9 @@ class CourseController extends Controller
     public function list(): JsonResponse
     {
         $courseDTOs = $this->courseService->listCourses();
-        return response()->json($courseDTOs, 200);
+        $responseDTO = new SuccessResponseDTO(200, 'Operation successful', $courseDTOs);
+
+        return response()->json($responseDTO, 200);
     }
 
     /**
@@ -46,12 +49,13 @@ class CourseController extends Controller
             $validatedData['code'],
             $validatedData['name']
         );
-
         // Use the service layer to create the course.
         $courseDTO = $this->courseService->createCourse($dto);
 
+        $responseDTO = new SuccessResponseDTO(201, 'Course created successfully', $courseDTO);
+
         // Return the created course DTO with a 201 status code.
-        return response()->json($courseDTO, 201);
+        return response()->json($responseDTO, 201);
     }
 
     /**
@@ -74,10 +78,12 @@ class CourseController extends Controller
         $updatedCourseDTO = $this->courseService->updateCourse($editDTO);
         
         if (!$updatedCourseDTO) {
-            return response()->json(['message' => 'Course not found'], 404);
+            $responseDTO = new ErrorResponseDTO(404, "Course not found", []);
+            return response()->json($responseDTO, 404);
         }
         
-        return response()->json($updatedCourseDTO, 200);
+        $responseDTO = new SuccessResponseDTO(200, 'Course edited successfully', $updatedCourseDTO);
+        return response()->json($responseDTO, 200);
     }
 
     /**
@@ -91,9 +97,11 @@ class CourseController extends Controller
         $deleted = $this->courseService->deleteCourse($id);
 
         if (!$deleted) {
-            return response()->json(['message' => 'Course not found'], 404);
+            $responseDTO = new ErrorResponseDTO(404, "Course not found", []);
+            return response()->json($responseDTO, 404);
         }
 
-        return response()->json(['message' => 'Course deleted successfully'], 200);
+        $responseDTO = new SuccessResponseDTO(200, 'Course deleted successfully', []);
+        return response()->json($responseDTO, 200);
     }
 }

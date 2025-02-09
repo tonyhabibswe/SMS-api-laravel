@@ -84,7 +84,7 @@ class StudentRepository
                 'students.major',
                 'students.email',
                 'students.campus',
-                DB::raw('SUM(CASE WHEN attendances.value = "abscent" THEN 1 ELSE 0 END) as abscences'),
+                DB::raw("SUM(CASE WHEN attendances.value = 'abscent' THEN 1 ELSE 0 END) as abscences"),
                 DB::raw('SUM(CASE WHEN attendances.value IS NOT NULL THEN 1 ELSE 0 END) as sessions'),
                 DB::raw('COUNT(attendances.id) as total_sessions')
             )
