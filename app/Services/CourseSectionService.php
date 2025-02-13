@@ -45,13 +45,13 @@ class CourseSectionService
     public function createCourseSection(CourseSectionCreateDTO $dto)
     {
         // Retrieve the Semester (with holidays) by ID.
-        $semester = Semester::with('holidays')->find($dto->semester_id);
+        $semester = Semester::with('holidays')->find($dto->semesterId);
         if (!$semester) {
             throw new \Exception("Semester not found", 404);
         }
 
         // Retrieve the Course by ID.
-        $course = Course::find($dto->course_id);
+        $course = Course::find($dto->courseId);
         if (!$course) {
             throw new \Exception("Course not found", 404);
         }
@@ -59,14 +59,14 @@ class CourseSectionService
         // Prepare an array of holiday dates.
         $holidayDates = $semester->holidays->pluck('date')->toArray();
         // Build a formatted time string for the section.
-        $courseSectionTime = implode('', array_map('getDayAbbreviation', $dto->course_days))
-            . " {$dto->start_session_time}-{$dto->end_session_time}";
+        $courseSectionTime = implode('', array_map('getDayAbbreviation', $dto->courseDays))
+            . " {$dto->startSessionTime}-{$dto->endSessionTime}";
 
         // Create the CourseSection.
         $courseSection = $this->courseSectionRepository->createCourseSection([
             'course_id'    => $course->id,
             'semester_id'  => $semester->id,
-            'section_code' => $dto->section_code,
+            'section_code' => $dto->sectionCode,
             'time'         => $courseSectionTime,
         ]);
 
@@ -86,9 +86,9 @@ class CourseSectionService
             }
 
             // Check if the day of week is one of the course days.
-            if (in_array($date->format('l'), $dto->course_days)) {
-                $startDateTime = $date->copy()->setTimeFromTimeString($dto->start_session_time);
-                $endDateTime   = $date->copy()->setTimeFromTimeString($dto->end_session_time);
+            if (in_array($date->format('l'), $dto->courseDays)) {
+                $startDateTime = $date->copy()->setTimeFromTimeString($dto->startSessionTime);
+                $endDateTime   = $date->copy()->setTimeFromTimeString($dto->endSessionTime);
 
                 $sessions[] = new CourseSession([
                     'session_start' => $startDateTime,
@@ -116,13 +116,13 @@ class CourseSectionService
     public function updateCourseSection(CourseSectionEditDTO $dto): ?CourseSectionListDTO
     {
         $courseSection = $this->courseSectionRepository->updateCourseSection($dto);
+
         if (!$courseSection) {
             return null;
         }
         
         // Optionally load any relationships if needed.
         $courseSection->load('course', 'sessions');
-        
         // Convert the updated model into a DTO for output.
         return CourseSectionListDTO::fromModel($courseSection);
     }

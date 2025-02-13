@@ -1,0 +1,51 @@
+# Stage 1: Build & Install Dependencies
+FROM php:8.2-fpm-alpine as builder
+
+# Install system dependencies and libraries for required PHP extensions
+RUN apk update && apk add --no-cache \
+    bash \
+    git \
+    unzip \
+    libpq-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    curl
+
+# Install PHP extensions: pdo, pdo_pgsql, gd, and zip
+RUN docker-php-ext-install pdo pdo_pgsql
+
+# Configure GD with support for JPEG, PNG, and FreeType, then install gd extension
+RUN docker-php-ext-configure gd \
+      --with-freetype=/usr/include/ \
+      --with-jpeg=/usr/include/ && \
+    docker-php-ext-install gd
+
+RUN docker-php-ext-install zip
+
+# Set working directory
+WORKDIR /var/www
+
+# Copy composer files first for caching
+COPY composer.json composer.lock ./
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Install PHP dependencies without dev packages, optimized for production
+RUN composer install --no-dev --prefer-dist --optimize-autoloader
+
+# Copy the rest of the application code
+COPY . .
+
+# Ensure storage and cache directories are writable
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
+# Expose the PHP-FPM port
+EXPOSE 9000
+
+# Use PHP-FPM as the entrypoint
+CMD ["php-fpm"]
+
+# End of Dockerfile.prod

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseSectionController;
+use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\SemesterController;
 
 // Route::get('/user', function (Request $request) {
@@ -24,6 +25,13 @@ Route::post('semesters', [SemesterController::class, 'create'])->middleware('aut
 Route::put('semester/{id}', [SemesterController::class, 'edit'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::delete('semester/{id}', [SemesterController::class, 'delete'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::get('semester/{id}/courses', [SemesterController::class, 'listCoursesBySemesterId'])->where('id', '[0-9]+')->middleware('auth:api');
+
+//Holiday routes
+Route::get('semester/{id}/holidays', [HolidayController::class, 'listHolidays'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::post('semester/{id}/holidays', [HolidayController::class, 'createHoliday'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::put('holiday/{id}', [HolidayController::class, 'updateHoliday'])->where('id', '[0-9]+')->middleware('auth:api');
+
+
 
 //Course routes
 Route::get('courses', [CourseController::class, 'list'])->middleware('auth:api');
@@ -45,3 +53,4 @@ Route::get('course-session/{id}/attendances/list-students', [AttendanceControlle
 Route::put('attendance/{id}', [AttendanceController::class, 'update'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::put('course-session/{id}/attendances/bulk', [AttendanceController::class, 'updateBulkAttendanceValues'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::put('course-session/{id}/attendances/all', [AttendanceController::class, 'updateAllAttendanceValues'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::get('course-section/{id}/export-attendance', [AttendanceController::class, 'exportAttendance'])->where('id', '[0-9]+');

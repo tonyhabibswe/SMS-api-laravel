@@ -23,8 +23,8 @@ class SemesterCreateRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
+            'startDate' => 'required|date',
+            'endDate' => 'required|date|after:startDate',
             'holidays'    => 'sometimes|array',   // Optional array of holiday dates
             'holidays.*'  => 'date',              // Each element must be a valid date
         ];

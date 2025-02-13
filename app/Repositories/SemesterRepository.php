@@ -20,8 +20,8 @@ class SemesterRepository
         // Create the Semester record.
         $semester = Semester::create([
             'name'       => $dto->name,
-            'start_date' => $dto->start_date,
-            'end_date'   => $dto->end_date,
+            'start_date' => $dto->startDate,
+            'end_date'   => $dto->endDate,
         ]);
 
         // If holidays are provided, create related Holiday records.

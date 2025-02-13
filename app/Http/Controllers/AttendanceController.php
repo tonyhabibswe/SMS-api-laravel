@@ -6,10 +6,13 @@ use App\DTOs\Attendance\AttendanceUpdateBulkDTO;
 use App\DTOs\Attendance\AttendanceUpdateDTO;
 use App\DTOs\ErrorResponseDTO;
 use App\DTOs\SuccessResponseDTO;
+use App\Exports\AttendanceExport;
 use App\Http\Requests\AttendanceBulkUpdateRequest;
 use App\Http\Requests\AttendanceUpdateRequest;
 use App\Services\AttendanceService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AttendanceController extends Controller
 {
@@ -104,6 +107,20 @@ class AttendanceController extends Controller
         }
 
         $responseDTO = new SuccessResponseDTO(200, 'Attendances updated successfully', []);
+        return response()->json($responseDTO, $responseDTO->statusCode);
+    }
+
+    /**
+     * Export attendance as an Excel file for a given course section.
+     *
+     * @param Request $request
+     * @param int $courseSectionId
+     * @return string base64 file
+     */
+    public function exportAttendance(Request $request, int $courseSectionId)
+    {
+        $file = $this->attendanceService->exportAttendance($courseSectionId);
+        $responseDTO = new SuccessResponseDTO(200, 'Attendances exported successfully', $file);
         return response()->json($responseDTO, $responseDTO->statusCode);
     }
 }

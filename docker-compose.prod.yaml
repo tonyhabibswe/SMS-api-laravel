@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  sms-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: sms-api
+    restart: always
+    expose:
+      - "9000"    # Internal PHP-FPM port (not published directly)
+    volumes:
+      - ./:/var/www
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: sms-db
+      DB_PORT: 5432
+      DB_DATABASE: smsdb
+      DB_USERNAME: smsuser
+      DB_PASSWORD: smspassword
+      # These environment variables are used by the nginx-proxy and letsencrypt companion
+      VIRTUAL_HOST: sms-api.dev
+      LETSENCRYPT_HOST: sms-api.dev
+      LETSENCRYPT_EMAIL: your-email@example.com
+    depends_on:
+      - sms-db
+    networks:
+      - sms-network
+
+  sms-db:
+    image: postgres:13-alpine
+    container_name: sms-db
+    restart: always
+    environment:
+      POSTGRES_DB: smsdb
+      POSTGRES_USER: smsuser
+      POSTGRES_PASSWORD: smspassword
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    networks:
+      - sms-network
+
+networks:
+  sms-network:
+    external: true

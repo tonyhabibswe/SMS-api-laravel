@@ -51,12 +51,12 @@ class CourseSectionController extends Controller
     {
         // Build the DTO from validated request data.
         $dto = new CourseSectionCreateDTO(
-            $request->semester_id,
-            $request->course_id,
-            $request->section_code,
-            $request->course_days,
-            $request->start_session_time,
-            $request->end_session_time,
+            $request->semesterId,
+            $request->courseId,
+            $request->sectionCode,
+            $request->courseDays,
+            $request->startSessionTime,
+            $request->endSessionTime,
             $request->room
         );
 
@@ -82,12 +82,11 @@ class CourseSectionController extends Controller
         // Build the DTO from the validated request data and route parameter.
         $editDTO = new CourseSectionEditDTO(
             $id,
-            $request->section_code
+            $request->sectionCode
         );
 
         // Call the service layer to update the course section.
         $updatedCourseSectionDTO = $this->courseSectionService->updateCourseSection($editDTO);
-
         if (!$updatedCourseSectionDTO) {
             $responseDTO = new ErrorResponseDTO(404, "Course section not found", []);
             return response()->json($responseDTO, 404);

@@ -2,22 +2,30 @@
 
 namespace App\Services;
 
+use App\DTOs\Attendance\AttendanceExportDTO;
 use App\DTOs\Attendance\AttendanceUpdateBulkDTO;
 use App\DTOs\Attendance\AttendanceUpdateDTO;
 use App\DTOs\Attendance\StudentAttendanceListDTO;
+use App\Exports\AttendanceExport;
 use App\Models\CourseSession;
 use App\Repositories\AttendanceRepository;
+use App\Repositories\CourseSectionRepository;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Excel;
+use Maatwebsite\Excel\Facades\Excel as ExcelFacade;
+
 
 class AttendanceService
 {
     protected AttendanceRepository $attendanceRepository;
+    protected CourseSectionRepository $courseSectionRepository;
 
-    public function __construct(AttendanceRepository $attendanceRepository)
+    public function __construct(AttendanceRepository $attendanceRepository, CourseSectionRepository $courseSectionRepository)
     {
         $this->attendanceRepository = $attendanceRepository;
+        $this->courseSectionRepository = $courseSectionRepository;
     }
 
     /**
@@ -115,5 +123,25 @@ class AttendanceService
                 throw new Exception("No attendance records were updated", 404);
             }
         });
+    }
+
+    /**
+     * Export all the attendance excel sheet.
+     *
+     * @param int $courseSectionId
+     * @throws Exception if the course section is not found.
+     * @return string 
+     */
+    public function exportAttendance(int $courseSectionId) {
+
+        $courseSection = $this->courseSectionRepository->findCourseBySectionId($courseSectionId);
+        if (!$courseSection) {
+            throw new Exception("Course section not found", 404);
+        }
+
+        $fileName = $courseSection->course->code . '_' . $courseSection->section_code . '_attendance.xlsx';
+        $fileContent = ExcelFacade::raw(new AttendanceExport($courseSectionId), Excel::XLSX);
+        $base64File = base64_encode($fileContent);
+        return new AttendanceExportDTO($fileName, $base64File);
     }
 }

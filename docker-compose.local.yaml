@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  sms-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: sms-api
+    ports:
+      - "8000:8000"    # Expose Laravel's built-in server on port 8000
+    volumes:
+      - ./:/var/www
+    environment:
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST:       ${DB_HOST}
+      DB_PORT:       ${DB_PORT}
+      DB_DATABASE:   ${DB_DATABASE}
+      DB_USERNAME:   ${DB_USERNAME}
+      DB_PASSWORD:   ${DB_PASSWORD}
+    depends_on:
+      - sms-db
+    networks:
+      - sms-network
+
+  sms-db:
+    image: postgres:13-alpine
+    container_name: sms-db
+    environment:
+      POSTGRES_DB:       ${DB_DATABASE}
+      POSTGRES_USER:     ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    networks:
+      - sms-network
+
+networks:
+  sms-network:
+    driver: bridge

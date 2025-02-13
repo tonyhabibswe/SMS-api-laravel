@@ -9,6 +9,11 @@ use Illuminate\Support\Collection;
 
 class CourseSectionRepository
 {
+    public function findCourseBySectionId(int $id)
+    {
+        return CourseSection::with('course')->find($id);
+
+    }
     /**
      * Retrieve all course sections by semester ID with necessary relationships.
      *
@@ -61,7 +66,7 @@ class CourseSectionRepository
             return null;
         }
 
-        $courseSection->section_code = $dto->section_code;
+        $courseSection->section_code = $dto->sectionCode;
         $courseSection->save();
 
         return $courseSection;

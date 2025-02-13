@@ -45,5 +45,21 @@ class CourseSessionRepository
             ->get();
     }
 
+    /**
+     * Delete all course sessions for a given semester that match a specific date.
+     *
+     * @param int $semesterId
+     * @param string $holidayDate Date in Y-m-d format.
+     * @return int Number of records deleted.
+     */
+    public function deleteSessionsBySemesterAndDate(int $semesterId, string $holidayDate): int
+    {
+        return CourseSession::whereHas('courseSection', function($q) use ($semesterId) {
+                $q->where('semester_id', $semesterId);
+            })
+            ->whereDate('session_start', $holidayDate)
+            ->delete();
+    }
+
     
 }

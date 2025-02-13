@@ -51,8 +51,8 @@ class SemesterController extends Controller
         // Build a DTO from the validated request data.
         $createDTO = new SemesterCreateDTO(
             $request->name,
-            $request->start_date,
-            $request->end_date,
+            $request->startDate,
+            $request->endDate,
             $request->holidays ?? null
         );
 

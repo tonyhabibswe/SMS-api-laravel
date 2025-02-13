@@ -19,3 +19,4 @@ if (!function_exists('getDayAbbreviation')) {
         return $dayAbbreviations[$day] ?? throw new InvalidArgumentException("Invalid day of week: $day");
     }
 }
+?>

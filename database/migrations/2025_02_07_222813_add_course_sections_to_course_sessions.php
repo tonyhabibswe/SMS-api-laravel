@@ -26,7 +26,7 @@ return new class extends Migration
         Schema::table('course_sessions', function (Blueprint $table) {
             $table->dropForeign(['course_section_id']);
             $table->dropColumn('course_section_id');
-            $table->foreignId('course_id')->constrained('courses')->onDelete('cascade');
+            $table->foreignId('course_id')->nullable()->constrained('courses')->onDelete('cascade');
         });
     }
 };

@@ -16,7 +16,7 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::table('courses', function (Blueprint $table) {
-            $table->foreignId('semester_id')
+            $table->foreignId('semester_id')->nullable()
                   ->constrained()
                   ->onDelete('cascade');
         });

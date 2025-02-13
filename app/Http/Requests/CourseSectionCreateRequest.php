@@ -22,13 +22,13 @@ class CourseSectionCreateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'course_id' => 'required|exists:courses,id',
-            'semester_id' => 'required|exists:semesters,id',
-            'section_code' => 'required|string|max:2',
-            'course_days' => 'required|array',
-            'course_days.*' => 'in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
-            'start_session_time' => 'required|date_format:H:i',
-            'end_session_time' => 'required|date_format:H:i|after:start_session_time',
+            'courseId' => 'required|exists:courses,id',
+            'semesterId' => 'required|exists:semesters,id',
+            'sectionCode' => 'required|string|max:2',
+            'courseDays' => 'required|array',
+            'courseDays.*' => 'in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+            'startSessionTime' => 'required|date_format:H:i',
+            'endSessionTime' => 'required|date_format:H:i|after:start_session_time',
             'room' => 'required|string|max:100',
         ];
     }
