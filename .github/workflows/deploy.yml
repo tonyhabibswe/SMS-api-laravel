@@ -1,23 +1,23 @@
-name: Deploy to VPS
+name: Deploy sms-api
 
 on:
   push:
     branches:
-      - main  # or master, depending on your branch
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Set up SSH agent
-        uses: webfactory/ssh-agent@v0.5.3
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.8.1
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
 
-      - name: Deploy to VPS
+      - name: Trigger deployment script on VPS
         run: |
-          ssh -o StrictHostKeyChecking=no deploy@144.91.93.38 "bash /root/scripts/sms/sms-api/deploy.sh"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER }} "cd /home/smsuser/publish-scripts && ./deploy-api.sh"
