@@ -1,0 +1,23 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main  # or master, depending on your branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no deploy@144.91.93.38 "bash /root/scripts/sms/sms-api/deploy.sh"
