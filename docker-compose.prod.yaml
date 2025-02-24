@@ -12,16 +12,17 @@ services:
     volumes:
       - ./:/var/www
     environment:
-      DB_CONNECTION: pgsql
-      DB_HOST: sms-db
-      DB_PORT: 5432
-      DB_DATABASE: smsdb
-      DB_USERNAME: smsuser
-      DB_PASSWORD: smspassword
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
       # These environment variables are used by the nginx-proxy and letsencrypt companion
-      VIRTUAL_HOST: sms-api.dev
-      LETSENCRYPT_HOST: sms-api.dev
-      LETSENCRYPT_EMAIL: your-email@example.com
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
+      LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+
     depends_on:
       - sms-db
     networks:
@@ -32,9 +33,9 @@ services:
     container_name: sms-db
     restart: always
     environment:
-      POSTGRES_DB: smsdb
-      POSTGRES_USER: smsuser
-      POSTGRES_PASSWORD: smspassword
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./data:/var/lib/postgresql/data
     networks:
