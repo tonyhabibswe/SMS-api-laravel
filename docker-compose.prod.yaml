@@ -10,7 +10,8 @@ services:
     expose:
       - "9000"    # Internal PHP-FPM port (not published directly)
     volumes:
-      - ./:/var/www
+      - ./:/var/www           # Mount host code for development updates (if needed)
+      - vendor_volume:/var/www/vendor  # Preserve the vendor folder from the built image
     environment:
       DB_CONNECTION: ${DB_CONNECTION}
       DB_HOST: ${DB_HOST}
@@ -18,11 +19,10 @@ services:
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      # These environment variables are used by the nginx-proxy and letsencrypt companion
+      # Environment variables for the reverse proxy and Let's Encrypt companion
       VIRTUAL_HOST: ${VIRTUAL_HOST}
       LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
-
     depends_on:
       - sms-db
     networks:
@@ -44,3 +44,6 @@ services:
 networks:
   sms-network:
     external: true
+
+volumes:
+  vendor_volume:
