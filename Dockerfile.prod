@@ -33,11 +33,11 @@ COPY composer.json composer.lock ./
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Install PHP dependencies without dev packages, optimized for production
-RUN composer install --no-dev --prefer-dist --optimize-autoloader
-
 # Copy the rest of the application code
 COPY . .
+
+# Install PHP dependencies without dev packages, optimized for production
+RUN composer install --no-dev --prefer-dist --optimize-autoloader
 
 # Ensure storage and cache directories are writable
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
