@@ -53,4 +53,4 @@ Route::get('course-session/{id}/attendances/list-students', [AttendanceControlle
 Route::put('attendance/{id}', [AttendanceController::class, 'update'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::put('course-session/{id}/attendances/bulk', [AttendanceController::class, 'updateBulkAttendanceValues'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::put('course-session/{id}/attendances/all', [AttendanceController::class, 'updateAllAttendanceValues'])->where('id', '[0-9]+')->middleware('auth:api');
-Route::get('course-section/{id}/export-attendance', [AttendanceController::class, 'exportAttendance'])->where('id', '[0-9]+');
+Route::get('course-section/{id}/export-attendance', [AttendanceController::class, 'exportAttendance'])->where('id', '[0-9]+')->middleware('auth:api');
