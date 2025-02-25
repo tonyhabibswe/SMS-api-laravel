@@ -19,10 +19,6 @@ services:
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      # Environment variables for the reverse proxy and Let's Encrypt companion
-      VIRTUAL_HOST: ${VIRTUAL_HOST}
-      LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
-      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
     depends_on:
       - sms-db
     networks:
