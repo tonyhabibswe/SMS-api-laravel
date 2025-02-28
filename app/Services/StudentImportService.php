@@ -70,18 +70,18 @@ class StudentImportService
         DB::transaction(function () use ($csvStudents, $courseSectionId) {
             // Extract unique student_ids from DTOs.
             $recordIds = collect($csvStudents)
-                ->pluck('student_id')
+                ->pluck('studentId')
                 ->unique()
                 ->toArray();
 
             // Retrieve existing students.
             $existingStudents = $this->studentRepository->getStudentsByStudentIds($recordIds);
-            $existingStudentIds = $existingStudents->pluck('student_id')->toArray();
+            $existingStudentIds = $existingStudents->pluck('studentId')->toArray();
 
             // Filter out new student DTOs (those that don't exist already).
             $newStudentDTOs = collect($csvStudents)
                 ->filter(function (StudentCreateDTO $dto) use ($existingStudentIds) {
-                    return !in_array($dto->student_id, $existingStudentIds);
+                    return !in_array($dto->studentId, $existingStudentIds);
                 })
                 ->values();
 

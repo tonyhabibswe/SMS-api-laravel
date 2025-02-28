@@ -17,13 +17,13 @@ class StudentRepository
      */
     public function findOrCreateStudent(StudentCreateDTO $dto): Student
     {
-        $student = Student::where('student_id', $dto->student_id)->first();
+        $student = Student::where('student_id', $dto->studentId)->first();
         if (!$student) {
             $student = Student::create([
-                'student_id'  => $dto->student_id,
-                'first_name'  => $dto->first_name,
-                'father_name' => $dto->father_name,
-                'last_name'   => $dto->last_name,
+                'student_id'  => $dto->studentId,
+                'first_name'  => $dto->firstName,
+                'father_name' => $dto->fatherName,
+                'last_name'   => $dto->lastName,
                 'major'       => $dto->major,
                 'email'       => $dto->email,
                 'campus'      => $dto->campus,
@@ -52,10 +52,10 @@ class StudentRepository
     public function createStudentFromDTO(StudentCreateDTO $dto)
     {
         return Student::create([
-            'student_id'  => $dto->student_id,
-            'first_name'  => $dto->first_name,
-            'father_name' => $dto->father_name,
-            'last_name'   => $dto->last_name,
+            'student_id'  => $dto->studentId,
+            'first_name'  => $dto->firstName,
+            'father_name' => $dto->fatherName,
+            'last_name'   => $dto->lastName,
             'major'       => $dto->major,
             'email'       => $dto->email,
             'campus'      => $dto->campus,

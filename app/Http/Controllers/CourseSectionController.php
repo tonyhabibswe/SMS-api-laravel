@@ -132,10 +132,10 @@ class CourseSectionController extends Controller
 
         // Build the DTO from the request data.
         $dto = new StudentCreateDTO(
-            $data['student_id'],
-            $data['first_name'],
-            $data['father_name'],
-            $data['last_name'],
+            $data['studentId'],
+            $data['firstName'],
+            $data['fatherName'],
+            $data['lastName'],
             $data['major'],
             $data['email'],
             $data['campus']
