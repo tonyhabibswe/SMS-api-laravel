@@ -49,13 +49,12 @@ class CourseSessionService
             $session = $this->courseSessionRepository->createSession([
                 'course_section_id' => $courseSection->id,
                 'room'              => $dto->room,
-                'session_start'     => $dto->session_start,
-                'session_end'       => $dto->session_end,
+                'session_start'     => $dto->sessionStart,
+                'session_end'       => $dto->sessionEnd,
             ]);
 
             // Retrieve distinct student IDs already enrolled in this course section.
             $studentIds = $this->courseSectionRepository->getDistinctStudentIdsByCourseSection($courseSectionId);
-
             // For each student, create a new attendance record for the new session.
             foreach ($studentIds as $studentId) {
                 $this->attendanceRepository->createSingleAttendanceForStudent($session->id, $studentId);

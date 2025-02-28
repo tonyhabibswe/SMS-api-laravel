@@ -15,8 +15,8 @@ class SessionCreateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'session_start' => 'required|date',
-            'session_end'   => 'required|date|after:session_start',
+            'sessionStart' => 'required|date',
+            'sessionEnd'   => 'required|date|after:sessionStart',
             'room'          => 'required|string',
         ];
     }

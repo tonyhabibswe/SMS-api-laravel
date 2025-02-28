@@ -96,7 +96,7 @@ class CourseSectionRepository
      */
     public function getDistinctStudentIdsByCourseSection(int $courseSectionId)
     {
-        return Attendance::whereHas('session', function ($query) use ($courseSectionId) {
+        return Attendance::whereHas('courseSession', function ($query) use ($courseSectionId) {
                     $query->where('course_section_id', $courseSectionId);
                 })
                 ->distinct()

@@ -5,13 +5,13 @@ namespace App\DTOs\Session;
 class SessionCreateDTO
 {
     public string $room;
-    public string $session_start;
-    public string $session_end;
+    public string $sessionStart;
+    public string $sessionEnd;
 
-    public function __construct(string $room, string $session_start, string $session_end)
+    public function __construct(string $room, string $sessionStart, string $sessionEnd)
     {
         $this->room = $room;
-        $this->session_start = $session_start;
-        $this->session_end = $session_end;
+        $this->sessionStart = $sessionStart;
+        $this->sessionEnd = $sessionEnd;
     }
 }

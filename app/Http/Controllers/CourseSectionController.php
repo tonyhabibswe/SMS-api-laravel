@@ -191,8 +191,8 @@ class CourseSectionController extends Controller
         // Build the DTO from the validated request data.
         $dto = new SessionCreateDTO(
             $data['room'],
-            $data['session_start'],
-            $data['session_end']
+            $data['sessionStart'],
+            $data['sessionEnd']
         );
 
         try {

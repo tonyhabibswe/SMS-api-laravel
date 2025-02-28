@@ -16,7 +16,7 @@ class Attendance extends Model
     ];
 
     // Define the relationship to Session
-    public function session()
+    public function courseSession()
     {
         return $this->belongsTo(CourseSession::class);
     }
