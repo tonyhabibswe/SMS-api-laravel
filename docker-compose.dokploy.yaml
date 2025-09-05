@@ -1,12 +1,10 @@
-# docker-compose.dokploy.yaml (backend)
-
 version: "3.8"
 
 services:
   api-php:
     build:
       context: .
-    dockerfile: Dockerfile.dokploy
+      dockerfile: Dockerfile.dokploy
     restart: always
     environment:
       APP_ENV: ${APP_ENV}
