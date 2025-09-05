@@ -40,7 +40,7 @@ services:
       - ./public:/var/www/public:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`dev2-sms-api.codewitht.com`)"
+      - "traefik.http.routers.api.rule=Host(`${API_HOST}`)"
       - "traefik.http.routers.api.entrypoints=${TRAEFIK_ENTRYPOINTS}"
       - "traefik.http.routers.api.tls.certresolver=${TRAEFIK_CERTRESOLVER}"
       - "traefik.http.services.api.loadbalancer.server.port=${API_INTERNAL_PORT}"
