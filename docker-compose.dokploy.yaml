@@ -1,10 +1,12 @@
+# docker-compose.dokploy.yaml (backend)
+
 version: "3.8"
 
 services:
   api-php:
     build:
       context: .
-      dockerfile: Dockerfile.dokploy
+    dockerfile: Dockerfile.dokploy
     restart: always
     environment:
       APP_ENV: ${APP_ENV}
@@ -19,7 +21,6 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
 
-      # If using cookies/Sanctum across subdomains:
       SESSION_DOMAIN: .example.com
       SANCTUM_STATEFUL_DOMAINS: app.example.com
     volumes:
@@ -30,11 +31,13 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
+    networks: [backend] # <-- explicit shared network
 
   api-web:
     image: nginx:alpine
     depends_on:
-      - api-php
+      api-php:
+        condition: service_healthy # <-- wait for PHP-FPM to be healthy
     restart: always
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
@@ -50,14 +53,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
-
-  # one-time sidecar to copy /var/www/public from api-php into a named volume for nginx
-  api-public-populator:
-    image: alpine
-    depends_on: [api-php]
-    volumes:
-      - api-public:/var/www/public
-    command: sh -c "sleep 2 && rm -rf /var/www/public/* && cp -r /proc/1/root/var/www/public/* /var/www/public/ || true"
+    networks: [backend] # <-- same network
 
   db:
     image: postgres:13-alpine
@@ -77,9 +73,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    networks: [backend]
 
 volumes:
   dbdata:
   storage:
   cache:
-  api-public:
+
+networks:
+  backend: {} # <-- define shared network
