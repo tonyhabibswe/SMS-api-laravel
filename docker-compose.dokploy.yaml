@@ -10,6 +10,7 @@ services:
       APP_ENV: ${APP_ENV}
       APP_KEY: ${APP_KEY}
       APP_URL: ${APP_URL}
+      API_HOST: ${API_HOST}
       APP_DEBUG: "false"
 
       DB_CONNECTION: pgsql
@@ -18,9 +19,6 @@ services:
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-
-      SESSION_DOMAIN: .example.com
-      SANCTUM_STATEFUL_DOMAINS: app.example.com
     volumes:
       - storage:/var/www/storage
       - cache:/var/www/bootstrap/cache
