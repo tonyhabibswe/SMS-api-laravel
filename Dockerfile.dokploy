@@ -26,6 +26,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 # Cache deps, then install
 COPY composer.json composer.lock ./
+COPY . .
 RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
 
 # App code
