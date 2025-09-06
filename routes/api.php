@@ -12,6 +12,9 @@ use App\Http\Controllers\SemesterController;
 //     return $request->user();
 // })->middleware('auth:sanctum');
 
+// routes/api.php
+Route::get('/health', fn() => response()->json(['ok' => true]));
+
 
 //Auth routes
 Route::post('login', [AuthController::class, 'login']);
