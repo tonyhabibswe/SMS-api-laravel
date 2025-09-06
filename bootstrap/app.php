@@ -54,9 +54,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 $statusCode = 422;
                 $message = 'Validation error';
                 $errors = $exception->errors();
+            } else {
+                if (!app()->environment('production')) {
+                    $errors = $exception->getMessage();
+                }
             }
-            $message = $exception->getMessage();
-
             return response()->json([
                 'statusCode' => $statusCode,
                 'message' => $message,
