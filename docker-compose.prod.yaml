@@ -8,10 +8,10 @@ services:
     container_name: sms-api
     restart: always
     expose:
-      - "9000"    # Internal PHP-FPM port (not published directly)
+      - "9000" # Internal PHP-FPM port (not published directly)
     volumes:
-      - ./:/var/www           # Mount host code for development updates (if needed)
-      - vendor_volume:/var/www/vendor  # Preserve the vendor folder from the built image
+      - ./:/var/www # Mount host code for development updates (if needed)
+      - vendor_volume:/var/www/vendor # Preserve the vendor folder from the built image
     environment:
       DB_CONNECTION: ${DB_CONNECTION}
       DB_HOST: ${DB_HOST}
@@ -35,7 +35,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - dbdata:/var/lib/postgresql/data
     networks:
       - sms-network
 
@@ -45,3 +45,5 @@ networks:
 
 volumes:
   vendor_volume:
+  dbdata:
+    name: sms-dbdata
