@@ -45,6 +45,12 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 # Override the default PHP-FPM listening address in www.conf
 RUN sed -i 's/listen = 127.0.0.1:9000/listen = 0.0.0.0:9000/g' /usr/local/etc/php-fpm.d/www.conf
 
+
+# Run entrypoint.sh
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
 # Expose the PHP-FPM port
 EXPOSE 9000
 
