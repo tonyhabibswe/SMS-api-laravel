@@ -13,7 +13,7 @@ use App\Http\Controllers\SemesterController;
 // })->middleware('auth:sanctum');
 
 // routes/api.php
-Route::get('/health', fn() => response()->json(['ok' => true]));
+// Route::get('/health', fn() => response()->json(['ok' => true]));
 
 
 //Auth routes
@@ -46,8 +46,8 @@ Route::delete('course/{id}', [CourseController::class, 'delete'])->where('id', '
 Route::post('course-sections', [CourseSectionController::class, 'create'])->middleware('auth:api');
 Route::put('course-section/{id}', [CourseSectionController::class, 'edit'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::delete('course-section/{id}', [CourseSectionController::class, 'delete'])->where('id', '[0-9]+')->middleware('auth:api');
-Route::post('course-section/{id}/import-students', [CourseSectionController::class, 'importStudents']) ->where('id', '[0-9]+')->middleware('auth:api');
-Route::post('course-section/{id}/student', [CourseSectionController::class, 'createStudent']) ->where('id', '[0-9]+')->middleware('auth:api');
+Route::post('course-section/{id}/import-students', [CourseSectionController::class, 'importStudents'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::post('course-section/{id}/student', [CourseSectionController::class, 'createStudent'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::post('course-section/{id}/session', [CourseSectionController::class, 'createSession'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::get('course-section/{id}/sessions', [CourseSectionController::class, 'getSessions'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::get('course-section/{id}/students', [CourseSectionController::class, 'getStudents'])->where('id', '[0-9]+')->middleware('auth:api');
