@@ -13,7 +13,7 @@ use App\Http\Controllers\SemesterController;
 // })->middleware('auth:sanctum');
 
 // routes/api.php
-// Route::get('/health', fn() => response()->json(['ok' => true]));
+Route::get('/health', fn() => response()->json(['ok' => true]));
 
 
 //Auth routes
