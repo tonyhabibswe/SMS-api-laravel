@@ -7,6 +7,8 @@ use App\DTOs\Student\StudentCreateDTO;
 use App\Repositories\StudentRepository;
 use App\Repositories\CourseSessionRepository;
 use App\Repositories\AttendanceRepository;
+use App\Repositories\CourseSectionRepository;
+use App\Services\StudentMajorHistoryService;
 use Exception;
 use Illuminate\Support\Collection;
 
@@ -15,15 +17,21 @@ class StudentAttendanceService
     protected StudentRepository $studentRepository;
     protected CourseSessionRepository $courseSessionRepository;
     protected AttendanceRepository $attendanceRepository;
+    protected CourseSectionRepository $courseSectionRepository;
+    protected StudentMajorHistoryService $majorHistoryService;
 
     public function __construct(
         StudentRepository $studentRepository,
         CourseSessionRepository $courseSessionRepository,
-        AttendanceRepository $attendanceRepository
+        AttendanceRepository $attendanceRepository,
+        CourseSectionRepository $courseSectionRepository,
+        StudentMajorHistoryService $majorHistoryService
     ) {
         $this->studentRepository         = $studentRepository;
         $this->courseSessionRepository   = $courseSessionRepository;
         $this->attendanceRepository      = $attendanceRepository;
+        $this->courseSectionRepository   = $courseSectionRepository;
+        $this->majorHistoryService       = $majorHistoryService;
     }
 
     /**
@@ -38,6 +46,19 @@ class StudentAttendanceService
     {
         // Find or create the student.
         $student = $this->studentRepository->findOrCreateStudent($dto);
+
+        // Get course section to find semester
+        $courseSection = \App\Models\CourseSection::find($courseSectionId);
+        if (!$courseSection) {
+            throw new Exception("Course section not found", 404);
+        }
+
+        // Track major change/history
+        $this->majorHistoryService->trackMajorChange(
+            $student->id,
+            $dto->major,
+            $courseSection->semester_id
+        );
 
         // Retrieve sessions for the given course section.
         $sessions = $this->courseSessionRepository->getSessionsByCourseSectionId($courseSectionId);

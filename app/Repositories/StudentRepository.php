@@ -4,11 +4,19 @@ namespace App\Repositories;
 
 use App\DTOs\Student\StudentCreateDTO;
 use App\Models\Student;
+use App\Services\MajorService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class StudentRepository
 {
+    protected MajorService $majorService;
+
+    public function __construct(MajorService $majorService)
+    {
+        $this->majorService = $majorService;
+    }
+
     /**
      * Find a student by student_id or create one using the DTO data.
      *
@@ -19,15 +27,28 @@ class StudentRepository
     {
         $student = Student::where('student_id', $dto->studentId)->first();
         if (!$student) {
+            // Find or create the major
+            $major = $this->majorService->findOrCreateMajor($dto->major);
+
             $student = Student::create([
                 'student_id'  => $dto->studentId,
                 'first_name'  => $dto->firstName,
                 'father_name' => $dto->fatherName,
                 'last_name'   => $dto->lastName,
-                'major'       => $dto->major,
+                'major'       => $dto->major, // Keep legacy field
+                'major_id'    => $major->id,  // New normalized field
                 'email'       => $dto->email,
                 'campus'      => $dto->campus,
             ]);
+        } else {
+            // Update existing student if major changed
+            $major = $this->majorService->findOrCreateMajor($dto->major);
+            if ($student->major_id !== $major->id) {
+                $student->update([
+                    'major' => $dto->major,
+                    'major_id' => $major->id,
+                ]);
+            }
         }
         return $student;
     }
@@ -40,7 +61,9 @@ class StudentRepository
      */
     public function getStudentsByStudentIds(array $studentIds): Collection
     {
-        return Student::whereIn('student_id', $studentIds)->get();
+        return Student::with('major')
+            ->whereIn('student_id', $studentIds)
+            ->get();
     }
 
     /**
@@ -49,19 +72,23 @@ class StudentRepository
      * @param StudentCreateDTO $dto
      * @return Student
      */
-    public function createStudentFromDTO(StudentCreateDTO $dto)
+    public function createStudentFromDTO(StudentCreateDTO $dto): Student
     {
+        // Find or create the major
+        $major = $this->majorService->findOrCreateMajor($dto->major);
+
         return Student::create([
             'student_id'  => $dto->studentId,
             'first_name'  => $dto->firstName,
             'father_name' => $dto->fatherName,
             'last_name'   => $dto->lastName,
-            'major'       => $dto->major,
+            'major'       => $dto->major, // Keep legacy field
+            'major_id'    => $major->id,  // New normalized field
             'email'       => $dto->email,
             'campus'      => $dto->campus,
         ]);
     }
-    
+
     /**
      * Get the student attendance summary for a given course section.
      *
@@ -74,6 +101,7 @@ class StudentRepository
             ->join('course_sessions', 'attendances.course_session_id', '=', 'course_sessions.id')
             ->join('course_sections', 'course_sessions.course_section_id', '=', 'course_sections.id')
             ->join('students', 'attendances.student_id', '=', 'students.id')
+            ->leftJoin('majors', 'students.major_id', '=', 'majors.id')
             ->where('course_sections.id', '=', $courseSectionId)
             ->select(
                 'students.id',
@@ -81,7 +109,8 @@ class StudentRepository
                 'students.first_name',
                 'students.father_name',
                 'students.last_name',
-                'students.major',
+                'students.major as legacy_major',
+                DB::raw('COALESCE(majors.label, majors.system_name, students.major) as major'),
                 'students.email',
                 'students.campus',
                 DB::raw("SUM(CASE WHEN attendances.value = 'abscent' THEN 1 ELSE 0 END) as abscences"),
@@ -95,6 +124,8 @@ class StudentRepository
                 'students.father_name',
                 'students.last_name',
                 'students.major',
+                'majors.label',
+                'majors.system_name',
                 'students.email',
                 'students.campus'
             )

@@ -6,6 +6,7 @@ use App\DTOs\Student\StudentCreateDTO;
 use App\Repositories\StudentRepository;
 use App\Repositories\CourseSessionRepository;
 use App\Repositories\AttendanceRepository;
+use App\Services\StudentMajorHistoryService;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
@@ -14,15 +15,18 @@ class StudentImportService
     protected StudentRepository $studentRepository;
     protected CourseSessionRepository $courseSessionRepository;
     protected AttendanceRepository $attendanceRepository;
+    protected StudentMajorHistoryService $majorHistoryService;
 
     public function __construct(
         StudentRepository $studentRepository,
         CourseSessionRepository $courseSessionRepository,
-        AttendanceRepository $attendanceRepository
+        AttendanceRepository $attendanceRepository,
+        StudentMajorHistoryService $majorHistoryService
     ) {
         $this->studentRepository         = $studentRepository;
         $this->courseSessionRepository   = $courseSessionRepository;
         $this->attendanceRepository      = $attendanceRepository;
+        $this->majorHistoryService       = $majorHistoryService;
     }
 
     /**
@@ -38,12 +42,12 @@ class StudentImportService
         if ($handle === false) {
             throw new Exception('Unable to open the file.', 500);
         }
-        
+
         // Skip the first 4 lines (header or irrelevant)
         for ($i = 0; $i < 4; $i++) {
             fgetcsv($handle);
         }
-        
+
         $csvStudents = [];
         while (($row = fgetcsv($handle)) !== false) {
             // Ensure that we have enough columns (expecting 7 columns)
@@ -62,12 +66,18 @@ class StudentImportService
             );
         }
         fclose($handle);
-        
+
         if (empty($csvStudents)) {
             throw new Exception('No student records found in CSV.', 400);
         }
-        
+
         DB::transaction(function () use ($csvStudents, $courseSectionId) {
+            // Get course section to find semester
+            $courseSection = \App\Models\CourseSection::find($courseSectionId);
+            if (!$courseSection) {
+                throw new Exception("Course section not found", 404);
+            }
+
             // Extract unique student_ids from DTOs.
             $recordIds = collect($csvStudents)
                 ->pluck('studentId')
@@ -85,10 +95,39 @@ class StudentImportService
                 })
                 ->values();
 
-            // Create new students.
-            $newStudents = $newStudentDTOs->map(function (StudentCreateDTO $dto) {
-                return $this->studentRepository->findOrCreateStudent($dto);
+            // Create new students and track major changes for all students.
+            $newStudents = $newStudentDTOs->map(function (StudentCreateDTO $dto) use ($courseSection) {
+                $student = $this->studentRepository->findOrCreateStudent($dto);
+
+                // Track major history for new students
+                $this->majorHistoryService->trackMajorChange(
+                    $student->id,
+                    $dto->major,
+                    $courseSection->semester_id
+                );
+
+                return $student;
             });
+
+            // Check for major changes in existing students
+            foreach ($existingStudents as $existingStudent) {
+                // Find the corresponding DTO for this student
+                $studentDTO = collect($csvStudents)->first(function (StudentCreateDTO $dto) use ($existingStudent) {
+                    return $dto->studentId === $existingStudent->student_id;
+                });
+
+                if ($studentDTO) {
+                    // Track major change if the major is different
+                    $this->majorHistoryService->trackMajorChange(
+                        $existingStudent->id,
+                        $studentDTO->major,
+                        $courseSection->semester_id
+                    );
+
+                    // Update the student record if major changed
+                    $this->studentRepository->findOrCreateStudent($studentDTO);
+                }
+            }
 
             // Merge existing and new students.
             $allStudents = $existingStudents->merge($newStudents);

@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\MajorController;
+use App\Http\Controllers\StudentMajorHistoryController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CourseController;
@@ -58,3 +60,14 @@ Route::put('attendance/{id}', [AttendanceController::class, 'update'])->where('i
 Route::put('course-session/{id}/attendances/bulk', [AttendanceController::class, 'updateBulkAttendanceValues'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::put('course-session/{id}/attendances/all', [AttendanceController::class, 'updateAllAttendanceValues'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::get('course-section/{id}/export-attendance', [AttendanceController::class, 'exportAttendance'])->where('id', '[0-9]+')->middleware('auth:api');
+
+//Major routes
+Route::get('majors', [MajorController::class, 'list'])->middleware('auth:api');
+Route::get('majors/with-student-count', [MajorController::class, 'listWithStudentCount'])->middleware('auth:api');
+Route::put('major/{id}/label', [MajorController::class, 'updateLabel'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::get('major/system-name/{systemName}', [MajorController::class, 'findBySystemName'])->middleware('auth:api');
+
+//Student Major History routes
+Route::get('student/{id}/major-history', [StudentMajorHistoryController::class, 'getStudentHistory'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::get('student/{id}/current-major', [StudentMajorHistoryController::class, 'getCurrentStudentMajor'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::get('semester/{id}/major-history', [StudentMajorHistoryController::class, 'getSemesterHistory'])->where('id', '[0-9]+')->middleware('auth:api');

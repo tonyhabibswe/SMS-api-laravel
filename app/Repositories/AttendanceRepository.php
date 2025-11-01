@@ -103,6 +103,7 @@ class AttendanceRepository
             ->join('course_sessions', 'attendances.course_session_id', '=', 'course_sessions.id')
             ->join('course_sections', 'course_sessions.course_section_id', '=', 'course_sections.id')
             ->join('students', 'attendances.student_id', '=', 'students.id')
+            ->leftJoin('majors', 'students.major_id', '=', 'majors.id')
             ->where('course_sessions.id', '=', $sessionId)
             ->select(
                 'attendances.id',
@@ -110,7 +111,7 @@ class AttendanceRepository
                 'students.first_name',
                 'students.father_name',
                 'students.last_name',
-                'students.major',
+                DB::raw('COALESCE(majors.label, majors.system_name, students.major) as major'),
                 'students.email',
                 'students.campus',
                 'attendances.value as attendance'
@@ -122,6 +123,8 @@ class AttendanceRepository
                 'students.father_name',
                 'students.last_name',
                 'students.major',
+                'majors.label',
+                'majors.system_name',
                 'students.email',
                 'students.campus'
             )
