@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\CoursePassingGradeController;
 use App\Http\Controllers\MajorController;
 use App\Http\Controllers\StudentMajorHistoryController;
 use Illuminate\Support\Facades\Route;
@@ -71,3 +72,9 @@ Route::get('major/system-name/{systemName}', [MajorController::class, 'findBySys
 Route::get('student/{id}/major-history', [StudentMajorHistoryController::class, 'getStudentHistory'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::get('student/{id}/current-major', [StudentMajorHistoryController::class, 'getCurrentStudentMajor'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::get('semester/{id}/major-history', [StudentMajorHistoryController::class, 'getSemesterHistory'])->where('id', '[0-9]+')->middleware('auth:api');
+
+//Course Passing Grade routes
+Route::get('course-passing-grades', [CoursePassingGradeController::class, 'index'])->middleware('auth:api');
+Route::post('course-passing-grades', [CoursePassingGradeController::class, 'store'])->middleware('auth:api');
+Route::put('course-passing-grades/{id}', [CoursePassingGradeController::class, 'update'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::delete('course-passing-grades/{id}', [CoursePassingGradeController::class, 'destroy'])->where('id', '[0-9]+')->middleware('auth:api');

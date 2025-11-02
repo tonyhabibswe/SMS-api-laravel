@@ -196,6 +196,4 @@ class AttendanceRepository
         return Attendance::where('course_session_id', $sessionId)
             ->update(['value' => $value]);
     }
-
-
 }
