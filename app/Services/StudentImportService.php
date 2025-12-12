@@ -7,6 +7,7 @@ use App\Repositories\StudentRepository;
 use App\Repositories\CourseSessionRepository;
 use App\Repositories\AttendanceRepository;
 use App\Services\StudentMajorHistoryService;
+use App\Services\CourseEnrollmentService;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
@@ -16,17 +17,20 @@ class StudentImportService
     protected CourseSessionRepository $courseSessionRepository;
     protected AttendanceRepository $attendanceRepository;
     protected StudentMajorHistoryService $majorHistoryService;
+    protected CourseEnrollmentService $enrollmentService;
 
     public function __construct(
         StudentRepository $studentRepository,
         CourseSessionRepository $courseSessionRepository,
         AttendanceRepository $attendanceRepository,
-        StudentMajorHistoryService $majorHistoryService
+        StudentMajorHistoryService $majorHistoryService,
+        CourseEnrollmentService $enrollmentService
     ) {
         $this->studentRepository         = $studentRepository;
         $this->courseSessionRepository   = $courseSessionRepository;
         $this->attendanceRepository      = $attendanceRepository;
         $this->majorHistoryService       = $majorHistoryService;
+        $this->enrollmentService         = $enrollmentService;
     }
 
     /**
@@ -138,13 +142,21 @@ class StudentImportService
                 throw new Exception("This course section doesn't have any session created", 400);
             }
 
-            // For each student, check if attendance exists for the first session.
+            // For each student, create enrollment and check if attendance exists for the first session.
             $firstSession = $sessions->first();
             foreach ($allStudents as $student) {
-                $attendanceInDb = $this->attendanceRepository->findAttendance($firstSession->id, $student->id);
+                // Find or create enrollment for this student
+                $enrollment = $this->enrollmentService->findOrCreateEnrollment(
+                    $courseSectionId,
+                    $student->id,
+                    $student->major_id,
+                    1 // status_id = 1 (active)
+                );
+
+                $attendanceInDb = $this->attendanceRepository->findAttendance($firstSession->id, $enrollment->id);
                 if (!$attendanceInDb) {
                     // Create attendance records for each session.
-                    $this->attendanceRepository->createAttendancesForStudent($sessions, $student->id);
+                    $this->attendanceRepository->createAttendancesForEnrollment($sessions, $enrollment->id);
                 }
             }
         });

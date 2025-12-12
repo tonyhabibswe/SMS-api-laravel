@@ -1,7 +1,7 @@
 ---
 description: 'Expert Laravel development assistant specializing in modern Laravel 11.9+ applications with Eloquent, Artisan, testing, and best practices'
 model: GPT-4.1 | 'gpt-5' | 'Claude Sonnet 4.5' | 'Claude Sonnet 4'
-tools: ['codebase', 'terminalCommand', 'edit/editFiles', 'fetch', 'githubRepo', 'runTests', 'problems', 'search']
+tools: ['execute/createAndRunTask', 'execute/runInTerminal', 'execute/runTests', 'read/problems', 'read/readFile', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web']
 ---
 
 # Laravel Expert Agent

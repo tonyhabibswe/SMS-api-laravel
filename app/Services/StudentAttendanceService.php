@@ -9,6 +9,7 @@ use App\Repositories\CourseSessionRepository;
 use App\Repositories\AttendanceRepository;
 use App\Repositories\CourseSectionRepository;
 use App\Services\StudentMajorHistoryService;
+use App\Services\CourseEnrollmentService;
 use Exception;
 use Illuminate\Support\Collection;
 
@@ -19,19 +20,22 @@ class StudentAttendanceService
     protected AttendanceRepository $attendanceRepository;
     protected CourseSectionRepository $courseSectionRepository;
     protected StudentMajorHistoryService $majorHistoryService;
+    protected CourseEnrollmentService $enrollmentService;
 
     public function __construct(
         StudentRepository $studentRepository,
         CourseSessionRepository $courseSessionRepository,
         AttendanceRepository $attendanceRepository,
         CourseSectionRepository $courseSectionRepository,
-        StudentMajorHistoryService $majorHistoryService
+        StudentMajorHistoryService $majorHistoryService,
+        CourseEnrollmentService $enrollmentService
     ) {
         $this->studentRepository         = $studentRepository;
         $this->courseSessionRepository   = $courseSessionRepository;
         $this->attendanceRepository      = $attendanceRepository;
         $this->courseSectionRepository   = $courseSectionRepository;
         $this->majorHistoryService       = $majorHistoryService;
+        $this->enrollmentService         = $enrollmentService;
     }
 
     /**
@@ -60,6 +64,14 @@ class StudentAttendanceService
             $courseSection->semester_id
         );
 
+        // Find or create enrollment for this student
+        $enrollment = $this->enrollmentService->findOrCreateEnrollment(
+            $courseSectionId,
+            $student->id,
+            $student->major_id,
+            1 // status_id = 1 (active)
+        );
+
         // Retrieve sessions for the given course section.
         $sessions = $this->courseSessionRepository->getSessionsByCourseSectionId($courseSectionId);
 
@@ -67,13 +79,13 @@ class StudentAttendanceService
             throw new Exception("This course section doesn't have any session created", 400);
         }
 
-        // Check if an attendance record already exists for the first session for this student.
+        // Check if an attendance record already exists for the first session for this enrollment.
         $firstSession = $sessions->first();
-        $attendanceInDb = $this->attendanceRepository->findAttendance($firstSession->id, $student->id);
+        $attendanceInDb = $this->attendanceRepository->findAttendance($firstSession->id, $enrollment->id);
 
         if (!$attendanceInDb) {
             // Create an attendance record for each session.
-            $this->attendanceRepository->createAttendancesForStudent($sessions, $student->id);
+            $this->attendanceRepository->createAttendancesForEnrollment($sessions, $enrollment->id);
         }
 
         return $student;

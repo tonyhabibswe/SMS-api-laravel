@@ -97,12 +97,14 @@ class StudentRepository
      */
     public function getStudentAttendanceSummaryByCourseSectionId(int $courseSectionId): Collection
     {
-        return DB::table('attendances')
-            ->join('course_sessions', 'attendances.course_session_id', '=', 'course_sessions.id')
-            ->join('course_sections', 'course_sessions.course_section_id', '=', 'course_sections.id')
-            ->join('students', 'attendances.student_id', '=', 'students.id')
-            ->leftJoin('majors', 'students.major_id', '=', 'majors.id')
-            ->where('course_sections.id', '=', $courseSectionId)
+        return DB::table('course_enrollments')
+            ->join('students', 'course_enrollments.student_id', '=', 'students.id')
+            ->leftJoin('majors', 'course_enrollments.major_id', '=', 'majors.id')
+            ->leftJoin('attendances', function ($join) {
+                $join->on('attendances.course_enrollment_id', '=', 'course_enrollments.id');
+            })
+            ->leftJoin('course_sessions', 'attendances.course_session_id', '=', 'course_sessions.id')
+            ->where('course_enrollments.course_section_id', '=', $courseSectionId)
             ->select(
                 'students.id',
                 'students.student_id',

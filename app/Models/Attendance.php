@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Attendance extends Model
 {
@@ -11,19 +12,36 @@ class Attendance extends Model
 
     protected $fillable = [
         'course_session_id',
-        'student_id',
+        'course_enrollment_id',
         'value',
     ];
 
-    // Define the relationship to Session
-    public function courseSession()
+    protected $casts = [
+        'course_session_id' => 'integer',
+        'course_enrollment_id' => 'integer',
+    ];
+
+    /**
+     * Get the course session for this attendance.
+     */
+    public function courseSession(): BelongsTo
     {
         return $this->belongsTo(CourseSession::class);
     }
 
-    // Define the relationship to Student
-    public function student()
+    /**
+     * Get the course enrollment for this attendance.
+     */
+    public function courseEnrollment(): BelongsTo
     {
-        return $this->belongsTo(Student::class);
+        return $this->belongsTo(CourseEnrollment::class);
+    }
+
+    /**
+     * Get the student through enrollment relationship.
+     */
+    public function student(): BelongsTo
+    {
+        return $this->courseEnrollment->student();
     }
 }

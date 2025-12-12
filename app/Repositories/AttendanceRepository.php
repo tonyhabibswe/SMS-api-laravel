@@ -33,16 +33,16 @@ class AttendanceRepository
     }
 
     /**
-     * Find an attendance record by session ID and student ID.
+     * Find an attendance record by session ID and enrollment ID.
      *
      * @param int $sessionId
-     * @param int $studentId
+     * @param int $enrollmentId
      * @return Attendance|null
      */
-    public function findAttendance(int $sessionId, int $studentId)
+    public function findAttendance(int $sessionId, int $enrollmentId)
     {
         return Attendance::where('course_session_id', $sessionId)
-            ->where('student_id', $studentId)
+            ->where('course_enrollment_id', $enrollmentId)
             ->first();
     }
 
@@ -58,36 +58,36 @@ class AttendanceRepository
     }
 
     /**
-     * Create attendance records for a collection of sessions for a given student.
+     * Create attendance records for a collection of sessions for a given enrollment.
      *
      * @param \Illuminate\Support\Collection $sessions
-     * @param int $studentId
+     * @param int $enrollmentId
      * @return void
      */
-    public function createAttendancesForStudent($sessions, int $studentId): void
+    public function createAttendancesForEnrollment($sessions, int $enrollmentId): void
     {
         foreach ($sessions as $session) {
             $this->createAttendance([
                 'course_session_id' => $session->id,
-                'student_id'        => $studentId,
-                'value'             => null,
+                'course_enrollment_id' => $enrollmentId,
+                'value' => null,
             ]);
         }
     }
 
     /**
-     * Create an attendance record for a session and a student.
+     * Create an attendance record for a session and an enrollment.
      *
      * @param int $sessionId
-     * @param int $studentId
+     * @param int $enrollmentId
      * @return Attendance
      */
-    public function createSingleAttendanceForStudent(int $sessionId, int $studentId)
+    public function createSingleAttendanceForEnrollment(int $sessionId, int $enrollmentId)
     {
         return $this->createAttendance([
             'course_session_id' => $sessionId,
-            'student_id'        => $studentId,
-            'value'             => null,
+            'course_enrollment_id' => $enrollmentId,
+            'value' => null,
         ]);
     }
 
@@ -102,8 +102,9 @@ class AttendanceRepository
         return DB::table('attendances')
             ->join('course_sessions', 'attendances.course_session_id', '=', 'course_sessions.id')
             ->join('course_sections', 'course_sessions.course_section_id', '=', 'course_sections.id')
-            ->join('students', 'attendances.student_id', '=', 'students.id')
-            ->leftJoin('majors', 'students.major_id', '=', 'majors.id')
+            ->join('course_enrollments', 'attendances.course_enrollment_id', '=', 'course_enrollments.id')
+            ->join('students', 'course_enrollments.student_id', '=', 'students.id')
+            ->leftJoin('majors', 'course_enrollments.major_id', '=', 'majors.id')
             ->where('course_sessions.id', '=', $sessionId)
             ->select(
                 'attendances.id',
@@ -111,7 +112,7 @@ class AttendanceRepository
                 'students.first_name',
                 'students.father_name',
                 'students.last_name',
-                DB::raw('COALESCE(majors.label, majors.system_name, students.major) as major'),
+                DB::raw('COALESCE(majors.label, majors.system_name) as major'),
                 'students.email',
                 'students.campus',
                 'attendances.value as attendance'
@@ -122,7 +123,6 @@ class AttendanceRepository
                 'students.first_name',
                 'students.father_name',
                 'students.last_name',
-                'students.major',
                 'majors.label',
                 'majors.system_name',
                 'students.email',
