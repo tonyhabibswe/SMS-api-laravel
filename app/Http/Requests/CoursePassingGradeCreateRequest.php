@@ -21,22 +21,22 @@ class CoursePassingGradeCreateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'major_id' => [
+            'majorId' => [
                 'required',
                 'integer',
                 'exists:majors,id'
             ],
-            'semester_id' => [
+            'semesterId' => [
                 'required',
                 'integer',
                 'exists:semesters,id'
             ],
-            'course_id' => [
+            'courseId' => [
                 'required',
                 'integer',
                 'exists:courses,id'
             ],
-            'grade_value' => [
+            'gradeValue' => [
                 'required',
                 'numeric',
                 'min:0',
@@ -52,17 +52,17 @@ class CoursePassingGradeCreateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'major_id.required' => 'Major is required.',
-            'major_id.exists' => 'The selected major does not exist.',
-            'semester_id.required' => 'Semester is required.',
-            'semester_id.exists' => 'The selected semester does not exist.',
-            'course_id.required' => 'Course is required.',
-            'course_id.exists' => 'The selected course does not exist.',
-            'grade_value.required' => 'Grade value is required.',
-            'grade_value.numeric' => 'Grade value must be a number.',
-            'grade_value.min' => 'Grade value must be at least 0.',
-            'grade_value.max' => 'Grade value must not exceed 100.',
-            'grade_value.decimal' => 'Grade value must have at most 2 decimal places.',
+            'majorId.required' => 'Major is required.',
+            'majorId.exists' => 'The selected major does not exist.',
+            'semesterId.required' => 'Semester is required.',
+            'semesterId.exists' => 'The selected semester does not exist.',
+            'courseId.required' => 'Course is required.',
+            'courseId.exists' => 'The selected course does not exist.',
+            'gradeValue.required' => 'Grade value is required.',
+            'gradeValue.numeric' => 'Grade value must be a number.',
+            'gradeValue.min' => 'Grade value must be at least 0.',
+            'gradeValue.max' => 'Grade value must not exceed 100.',
+            'gradeValue.decimal' => 'Grade value must have at most 2 decimal places.',
         ];
     }
 
@@ -73,9 +73,9 @@ class CoursePassingGradeCreateRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             // Check for unique combination
-            $exists = \App\Models\CoursePassingGrade::where('major_id', $this->major_id)
-                ->where('semester_id', $this->semester_id)
-                ->where('course_id', $this->course_id)
+            $exists = \App\Models\CoursePassingGrade::where('major_id', $this->majorId)
+                ->where('semester_id', $this->semesterId)
+                ->where('course_id', $this->courseId)
                 ->exists();
 
             if ($exists) {

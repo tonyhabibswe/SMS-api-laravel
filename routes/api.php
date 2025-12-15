@@ -77,6 +77,7 @@ Route::get('semester/{id}/major-history', [StudentMajorHistoryController::class,
 
 //Course Passing Grade routes
 Route::get('course-passing-grades', [CoursePassingGradeController::class, 'index'])->middleware('auth:api');
+Route::get('course-passing-grades/course/{courseId}', [CoursePassingGradeController::class, 'getByCourse'])->where('courseId', '[0-9]+')->middleware('auth:api');
 Route::post('course-passing-grades', [CoursePassingGradeController::class, 'store'])->middleware('auth:api');
 Route::put('course-passing-grades/{id}', [CoursePassingGradeController::class, 'update'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::delete('course-passing-grades/{id}', [CoursePassingGradeController::class, 'destroy'])->where('id', '[0-9]+')->middleware('auth:api');

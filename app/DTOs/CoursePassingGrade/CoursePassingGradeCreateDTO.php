@@ -27,10 +27,10 @@ class CoursePassingGradeCreateDTO
     public static function fromRequest(array $data): self
     {
         return new self(
-            (int) $data['major_id'],
-            (int) $data['semester_id'],
-            (int) $data['course_id'],
-            (float) $data['grade_value']
+            (int) $data['majorId'],
+            (int) $data['semesterId'],
+            (int) $data['courseId'],
+            (float) $data['gradeValue']
         );
     }
 

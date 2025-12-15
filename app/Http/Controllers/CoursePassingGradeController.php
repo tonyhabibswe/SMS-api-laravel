@@ -66,10 +66,10 @@ class CoursePassingGradeController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             @OA\Property(property="major_id", type="integer", example=1),
-     *             @OA\Property(property="semester_id", type="integer", example=1),
-     *             @OA\Property(property="course_id", type="integer", example=1),
-     *             @OA\Property(property="grade_value", type="number", format="float", example=75.5)
+     *             @OA\Property(property="majorId", type="integer", example=1),
+     *             @OA\Property(property="semesterId", type="integer", example=1),
+     *             @OA\Property(property="courseId", type="integer", example=1),
+     *             @OA\Property(property="gradeValue", type="number", format="float", example=75.5)
      *         )
      *     ),
      *     @OA\Response(
@@ -118,10 +118,10 @@ class CoursePassingGradeController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             @OA\Property(property="major_id", type="integer", example=1),
-     *             @OA\Property(property="semester_id", type="integer", example=1),
-     *             @OA\Property(property="course_id", type="integer", example=1),
-     *             @OA\Property(property="grade_value", type="number", format="float", example=80.0)
+     *             @OA\Property(property="majorId", type="integer", example=1),
+     *             @OA\Property(property="semesterId", type="integer", example=1),
+     *             @OA\Property(property="courseId", type="integer", example=1),
+     *             @OA\Property(property="gradeValue", type="number", format="float", example=80.0)
      *         )
      *     ),
      *     @OA\Response(
@@ -206,6 +206,22 @@ class CoursePassingGradeController extends Controller
             return response()->json($responseDTO->toArray(), 404);
         } catch (\Exception $e) {
             $responseDTO = new ErrorResponseDTO(500, 'Failed to delete course passing grade', [$e->getMessage()]);
+            return response()->json($responseDTO->toArray(), 500);
+        }
+    }
+
+    /**
+     * Get all passing grades by course ID.
+     */
+    public function getByCourse(int $courseId): JsonResponse
+    {
+        try {
+            $passingGradesDTOs = $this->coursePassingGradeService->getCoursePassingGradesByCourse($courseId);
+            $responseDTO = new SuccessResponseDTO(200, 'Course passing grades retrieved successfully', $passingGradesDTOs->toArray());
+
+            return response()->json($responseDTO->toArray(), 200);
+        } catch (\Exception $e) {
+            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve course passing grades', [$e->getMessage()]);
             return response()->json($responseDTO->toArray(), 500);
         }
     }
