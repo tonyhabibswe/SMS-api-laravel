@@ -12,7 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('course_sections', function (Blueprint $table) {
-            //
+            $table->string('curve_algorithm', 50)
+                ->nullable()
+                ->after('time')
+                ->comment('Curve algorithm to apply: NULL (no curve), AVERAGE_BASED, BELL_CURVE, etc.');
         });
     }
 
@@ -22,7 +25,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('course_sections', function (Blueprint $table) {
-            //
+            $table->dropColumn('curve_algorithm');
         });
     }
 };
