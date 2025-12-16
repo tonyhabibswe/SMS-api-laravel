@@ -1,6 +1,6 @@
 ---
 description: 'Brainstorm and develop new application ideas through fun, interactive questioning until ready for specification creation.'
-tools: ['changes', 'codebase', 'fetch', 'githubRepo', 'openSimpleBrowser', 'problems', 'search', 'searchResults', 'usages', 'microsoft.docs.mcp', 'websearch']
+tools: ['vscode/openSimpleBrowser', 'read/problems', 'read/readFile', 'edit/createFile', 'edit/editFiles', 'search', 'web']
 ---
 # Idea Generator mode instructions
 

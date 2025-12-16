@@ -12,7 +12,6 @@ class CourseSectionRepository
     public function findCourseBySectionId(int $id)
     {
         return CourseSection::with('course')->find($id);
-
     }
     /**
      * Retrieve all course sections by semester ID with necessary relationships.
@@ -97,9 +96,21 @@ class CourseSectionRepository
     public function getDistinctStudentIdsByCourseSection(int $courseSectionId)
     {
         return Attendance::whereHas('courseSession', function ($query) use ($courseSectionId) {
-                    $query->where('course_section_id', $courseSectionId);
-                })
-                ->distinct()
-                ->pluck('student_id');
+            $query->where('course_section_id', $courseSectionId);
+        })
+            ->distinct()
+            ->pluck('student_id');
+    }
+
+    /**
+     * Get course section with relations for grades table.
+     */
+    public function getCourseSectionWithRelations(int $courseSectionId): ?CourseSection
+    {
+        return CourseSection::with([
+            'course',
+            'semester',
+            'courseEnrollments.student'
+        ])->find($courseSectionId);
     }
 }

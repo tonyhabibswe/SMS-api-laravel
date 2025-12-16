@@ -30,10 +30,26 @@ class CourseSection extends Model
     {
         return $this->hasMany(CourseSession::class);
     }
-    
+
     // Define a relationship to retrieve the first session only
     public function firstSession()
     {
         return $this->hasOne(CourseSession::class)->oldestOfMany();
+    }
+
+    /**
+     * Get all gradeable categories for this course section.
+     */
+    public function gradeableCategories()
+    {
+        return $this->hasMany(GradeableCategory::class);
+    }
+
+    /**
+     * Get all course enrollments for this course section.
+     */
+    public function courseEnrollments()
+    {
+        return $this->hasMany(CourseEnrollment::class);
     }
 }

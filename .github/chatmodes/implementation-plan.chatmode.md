@@ -1,6 +1,6 @@
 ---
 description: 'Generate an implementation plan for new features or refactoring existing code.'
-tools: ['codebase', 'usages', 'vscodeAPI', 'think', 'problems', 'changes', 'testFailure', 'terminalSelection', 'terminalLastCommand', 'openSimpleBrowser', 'fetch', 'findTestFiles', 'searchResults', 'githubRepo', 'extensions', 'edit/editFiles', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks']
+tools: ['vscode', 'execute/getTerminalOutput', 'execute/runTask', 'execute/getTaskOutput', 'execute/createAndRunTask', 'execute/runNotebookCell', 'execute/testFailure', 'execute/runInTerminal', 'read', 'edit/createDirectory', 'edit/createFile', 'edit/editFiles', 'search', 'web']
 ---
 # Implementation Plan Generation Mode
 

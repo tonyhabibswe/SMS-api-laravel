@@ -69,4 +69,12 @@ class CourseEnrollment extends Model
     {
         return $this->hasMany(Attendance::class);
     }
+
+    /**
+     * Get all grades for this enrollment.
+     */
+    public function grades(): HasMany
+    {
+        return $this->hasMany(Grade::class, 'course_enrollment_id');
+    }
 }

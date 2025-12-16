@@ -1,0 +1,291 @@
+<?php
+
+namespace App\Services;
+
+use App\DTOs\Grade\GradeUpdateDTO;
+use App\DTOs\Grade\GradeListDTO;
+use App\DTOs\Grade\GradeDetailDTO;
+use App\DTOs\CourseSection\GradesTableDTO;
+use App\DTOs\CourseSection\GradesTableColumnDTO;
+use App\DTOs\CourseSection\GradesTableRowDTO;
+use App\Models\Grade;
+use App\Repositories\GradeRepository;
+use App\Repositories\GradeableCategoryRepository;
+use App\Repositories\CourseSectionRepository;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+class GradeService
+{
+    protected GradeRepository $repository;
+    protected GradeableCategoryRepository $categoryRepository;
+    protected CourseSectionRepository $courseSectionRepository;
+    protected GradeableCategoryService $gradeableCategoryService;
+
+    public function __construct(
+        GradeRepository $repository,
+        GradeableCategoryRepository $categoryRepository,
+        CourseSectionRepository $courseSectionRepository,
+        GradeableCategoryService $gradeableCategoryService
+    ) {
+        $this->repository = $repository;
+        $this->categoryRepository = $categoryRepository;
+        $this->courseSectionRepository = $courseSectionRepository;
+        $this->gradeableCategoryService = $gradeableCategoryService;
+    }
+
+    /**
+     * Get all grades for a specific gradeable item.
+     */
+    public function getGradesByGradeableItem(int $gradeableItemId): Collection
+    {
+        $grades = $this->repository->getByGradeableItem($gradeableItemId);
+        return $grades->map(fn($grade) => GradeListDTO::fromModel($grade));
+    }
+
+    /**
+     * Get all grades for a specific enrollment.
+     */
+    public function getGradesByEnrollment(int $enrollmentId): Collection
+    {
+        $grades = $this->repository->getByEnrollment($enrollmentId);
+        return $grades->map(fn($grade) => GradeListDTO::fromModel($grade));
+    }
+
+    /**
+     * Update a single grade value with validation.
+     */
+    public function updateGrade(int $id, float $gradeValue): GradeDetailDTO
+    {
+        $grade = $this->repository->findByIdOrFail($id);
+
+        // Validate grade_value is within 0 to max_points
+        $maxPoints = $grade->gradeableItem->max_points;
+
+        if ($gradeValue < 0 || $gradeValue > $maxPoints) {
+            throw ValidationException::withMessages([
+                'gradeValue' => [
+                    sprintf('Grade value must be between 0 and %.2f (max points for this item).', $maxPoints)
+                ]
+            ]);
+        }
+
+        $grade = $this->repository->update($id, ['grade_value' => $gradeValue]);
+
+        return GradeDetailDTO::fromModel($grade);
+    }
+
+    /**
+     * Bulk update multiple grades at once.
+     *
+     * @param array $grades Array of ['id' => gradeId, 'gradeValue' => value]
+     */
+    public function bulkUpdateGrades(array $grades): Collection
+    {
+        return DB::transaction(function () use ($grades) {
+            $updatedGrades = collect();
+
+            foreach ($grades as $gradeData) {
+                $grade = $this->updateGrade($gradeData['id'], $gradeData['gradeValue']);
+                $updatedGrades->push($grade);
+            }
+
+            return $updatedGrades;
+        });
+    }
+
+    /**
+     * Calculate final grade for an enrollment based on weighted categories.
+     */
+    public function calculateFinalGrade(int $enrollmentId, int $courseSectionId): ?float
+    {
+        // Get all categories for this course section
+        $categories = $this->categoryRepository->getByCourseSection($courseSectionId);
+
+        if ($categories->isEmpty()) {
+            return null;
+        }
+
+        // Get all grades for this enrollment
+        $allGrades = $this->repository->getByEnrollment($enrollmentId);
+
+        if ($allGrades->isEmpty()) {
+            return null;
+        }
+
+        $totalWeightedGrade = 0;
+        $totalWeight = 0;
+
+        foreach ($categories as $category) {
+            // Get grades for this category
+            $categoryGrades = $allGrades->filter(function ($grade) use ($category) {
+                return $grade->gradeableItem->category_id === $category->id;
+            })->filter(fn($grade) => $grade->grade_value !== null);
+
+            if ($categoryGrades->isEmpty()) {
+                continue;
+            }
+
+            // Calculate category grade based on algorithm
+            $categoryGrade = null;
+
+            if ($category->algorithm === 'AVERAGE') {
+                $totalPoints = 0;
+                $maxPoints = 0;
+
+                foreach ($categoryGrades as $grade) {
+                    $totalPoints += $grade->grade_value;
+                    $maxPoints += $grade->gradeableItem->max_points;
+                }
+
+                $categoryGrade = $maxPoints > 0 ? ($totalPoints / $maxPoints) * 100 : null;
+            } elseif ($category->algorithm === 'PICK_HIGHEST') {
+                $percentages = $categoryGrades->map(function ($grade) {
+                    $maxPoints = $grade->gradeableItem->max_points;
+                    return $maxPoints > 0 ? ($grade->grade_value / $maxPoints) * 100 : 0;
+                });
+
+                $categoryGrade = $percentages->max();
+            }
+
+            if ($categoryGrade !== null) {
+                $totalWeightedGrade += ($categoryGrade * $category->weight_percent / 100);
+                $totalWeight += $category->weight_percent;
+            }
+        }
+
+        // Return weighted average
+        return $totalWeight > 0 ? round($totalWeightedGrade, 2) : null;
+    }
+
+    /**
+     * Get grades table for course section with all students and calculations.
+     */
+    public function getGradesTableForCourseSection(int $courseSectionId, bool $includeInactive = false): GradesTableDTO
+    {
+        // Retrieve course section with relations
+        $courseSection = $this->courseSectionRepository->getCourseSectionWithRelations($courseSectionId);
+
+        if (!$courseSection) {
+            throw new ModelNotFoundException("Course section not found");
+        }
+
+        // Retrieve categories with items ordered for table
+        $categories = $this->categoryRepository->getCategoriesWithItemsByCourseSectionOrderedForTable($courseSectionId);
+
+        // Retrieve all grades grouped by enrollment
+        $gradesGrouped = $this->repository->getAllGradesForCourseSectionGrouped($courseSectionId);
+
+        // Build columns array
+        $columns = [];
+
+        // Add identifier columns
+        $columns[] = new GradesTableColumnDTO('studentId', 'Student ID', 'identifier');
+        $columns[] = new GradesTableColumnDTO('studentName', 'Student Name', 'identifier');
+
+        // Add item and category columns
+        foreach ($categories as $category) {
+            foreach ($category->gradeableItems as $item) {
+                $columns[] = new GradesTableColumnDTO(
+                    key: "item_{$item->id}",
+                    label: $item->title,
+                    type: 'gradeableItem',
+                    gradeableItemId: $item->id,
+                    categoryId: $category->id,
+                    categoryName: $category->name,
+                    maxPoints: (float) $item->max_points
+                );
+            }
+
+            // Add category column after all its items
+            $columns[] = new GradesTableColumnDTO(
+                key: "category_{$category->id}",
+                label: "{$category->name} ({$category->weight_percent}%)",
+                type: 'category',
+                categoryId: $category->id,
+                weightPercent: (float) $category->weight_percent,
+                algorithm: $category->algorithm
+            );
+        }
+
+        // Add final grade column
+        $columns[] = new GradesTableColumnDTO('finalGrade', 'Final Grade', 'calculated');
+
+        // Filter enrollments
+        $enrollments = $courseSection->courseEnrollments;
+        if (!$includeInactive) {
+            $enrollments = $enrollments->filter(fn($enrollment) => $enrollment->status_id == 1); // active only
+        }
+
+        // Sort enrollments by student name
+        $enrollments = $enrollments->sortBy([
+            fn($a, $b) => strcmp($a->student->last_name ?? '', $b->student->last_name ?? ''),
+            fn($a, $b) => strcmp($a->student->first_name ?? '', $b->student->first_name ?? ''),
+        ]);
+
+        // Build rows array
+        $rows = [];
+        foreach ($enrollments as $enrollment) {
+            $grades = [];
+            $categoryWeightedScores = [];
+
+            // Get grades for this enrollment
+            $enrollmentGrades = $gradesGrouped->get($enrollment->id, collect());
+
+            // Populate item grades
+            foreach ($categories as $category) {
+                $itemGradesForCategory = [];
+
+                foreach ($category->gradeableItems as $item) {
+                    $grade = $enrollmentGrades->firstWhere('gradeable_item_id', $item->id);
+                    $gradeValue = $grade && $grade->grade_value !== null ? (float) $grade->grade_value : null;
+                    $grades["item_{$item->id}"] = $gradeValue;
+
+                    // Store for category calculation
+                    if ($gradeValue !== null) {
+                        $percentage = ($gradeValue / $item->max_points) * 100;
+                        $itemGradesForCategory[] = $percentage;
+                    }
+                }
+
+                // Calculate category weighted score
+                $categoryWeightedScore = 0.00;
+                if (!empty($itemGradesForCategory)) {
+                    // Use existing calculation logic
+                    $categoryPercentage = $this->gradeableCategoryService->calculateCategoryGrade($category->id, $enrollment->id);
+                    if ($categoryPercentage !== null) {
+                        $categoryWeightedScore = round(($categoryPercentage * $category->weight_percent / 100), 2);
+                    }
+                }
+
+                $grades["category_{$category->id}"] = $categoryWeightedScore;
+                $categoryWeightedScores[] = $categoryWeightedScore;
+            }
+
+            // Calculate final grade
+            $finalGrade = round(array_sum($categoryWeightedScores), 2);
+
+            // Create row DTO
+            $rows[] = new GradesTableRowDTO(
+                enrollmentId: $enrollment->id,
+                studentId: $enrollment->student->student_id ?? '',
+                studentName: trim(($enrollment->student->first_name ?? '') . ' ' . ($enrollment->student->last_name ?? '')),
+                enrollmentStatus: $enrollment->status_id == 1 ? 'active' : 'inactive',
+                grades: $grades,
+                finalGrade: $finalGrade
+            );
+        }
+
+        // Create and return table DTO
+        return new GradesTableDTO(
+            courseSectionId: $courseSection->id,
+            courseName: ($courseSection->course->code ?? '') . ' - ' . ($courseSection->course->name ?? ''),
+            semesterName: $courseSection->semester->name ?? '',
+            totalStudents: count($rows),
+            columns: $columns,
+            rows: $rows
+        );
+    }
+}

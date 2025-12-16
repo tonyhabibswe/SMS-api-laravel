@@ -24,3 +24,5 @@ yarn-error.log
 /data/*
 /plan
 /plan/*
+/spec
+/spec/*

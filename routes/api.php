@@ -6,6 +6,9 @@ use App\Http\Controllers\CourseEnrollmentController;
 use App\Http\Controllers\StudentCourseStatusController;
 use App\Http\Controllers\MajorController;
 use App\Http\Controllers\StudentMajorHistoryController;
+use App\Http\Controllers\GradeableCategoryController;
+use App\Http\Controllers\GradeableItemController;
+use App\Http\Controllers\GradeController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CourseController;
@@ -98,3 +101,30 @@ Route::get('student-course-statuses/name/{name}', [StudentCourseStatusController
 Route::post('student-course-statuses', [StudentCourseStatusController::class, 'store'])->middleware('auth:api');
 Route::put('student-course-statuses/{id}', [StudentCourseStatusController::class, 'update'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::delete('student-course-statuses/{id}', [StudentCourseStatusController::class, 'destroy'])->where('id', '[0-9]+')->middleware('auth:api');
+
+//Gradeable Category routes
+Route::get('gradeable-categories', [GradeableCategoryController::class, 'index'])->middleware('auth:api');
+Route::get('gradeable-categories/course-section/{courseSectionId}', [GradeableCategoryController::class, 'getByCourseSection'])->where('courseSectionId', '[0-9]+')->middleware('auth:api');
+Route::get('gradeable-categories/{id}', [GradeableCategoryController::class, 'show'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::post('gradeable-categories', [GradeableCategoryController::class, 'store'])->middleware('auth:api');
+Route::put('gradeable-categories/{id}', [GradeableCategoryController::class, 'update'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::delete('gradeable-categories/{id}', [GradeableCategoryController::class, 'destroy'])->where('id', '[0-9]+')->middleware('auth:api');
+
+//Gradeable Item routes
+Route::get('gradeable-items', [GradeableItemController::class, 'index'])->middleware('auth:api');
+Route::get('gradeable-items/category/{categoryId}', [GradeableItemController::class, 'getByCategory'])->where('categoryId', '[0-9]+')->middleware('auth:api');
+Route::get('gradeable-items/course-section/{courseSectionId}', [GradeableItemController::class, 'getByCourseSection'])->where('courseSectionId', '[0-9]+')->middleware('auth:api');
+Route::get('gradeable-items/{id}', [GradeableItemController::class, 'show'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::post('gradeable-items', [GradeableItemController::class, 'store'])->middleware('auth:api');
+Route::put('gradeable-items/{id}', [GradeableItemController::class, 'update'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::delete('gradeable-items/{id}', [GradeableItemController::class, 'destroy'])->where('id', '[0-9]+')->middleware('auth:api');
+
+//Grade routes
+Route::get('grades/gradeable-item/{gradeableItemId}', [GradeController::class, 'getByGradeableItem'])->where('gradeableItemId', '[0-9]+')->middleware('auth:api');
+Route::get('grades/enrollment/{enrollmentId}', [GradeController::class, 'getByEnrollment'])->where('enrollmentId', '[0-9]+')->middleware('auth:api');
+Route::get('grades/final/{enrollmentId}/{courseSectionId}', [GradeController::class, 'getFinalGrade'])->where(['enrollmentId' => '[0-9]+', 'courseSectionId' => '[0-9]+'])->middleware('auth:api');
+Route::put('grades/{id}', [GradeController::class, 'update'])->where('id', '[0-9]+')->middleware('auth:api');
+Route::post('grades/bulk-update', [GradeController::class, 'bulkUpdate'])->middleware('auth:api');
+
+// Course Section Grades Table
+Route::get('course-sections/{courseSectionId}/grades/table', [CourseSectionController::class, 'getGradesTable'])->where('courseSectionId', '[0-9]+')->middleware('auth:api');
