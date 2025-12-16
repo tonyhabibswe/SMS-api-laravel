@@ -9,16 +9,18 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
-function getDefaultMessageForStatusCode($statusCode)
-{
-    return match ($statusCode) {
-        401 => 'Unauthorized',
-        403 => 'Forbidden',
-        404 => 'Not Found',
-        422 => 'Unprocessable Entity',
-        500 => 'Internal Server Error',
-        default => 'An error occurred'
-    };
+if (!function_exists('getDefaultMessageForStatusCode')) {
+    function getDefaultMessageForStatusCode($statusCode)
+    {
+        return match ($statusCode) {
+            401 => 'Unauthorized',
+            403 => 'Forbidden',
+            404 => 'Not Found',
+            422 => 'Unprocessable Entity',
+            500 => 'Internal Server Error',
+            default => 'An error occurred'
+        };
+    }
 }
 
 return Application::configure(basePath: dirname(__DIR__))

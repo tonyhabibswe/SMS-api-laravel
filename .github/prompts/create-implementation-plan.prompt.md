@@ -1,7 +1,7 @@
 ---
 mode: 'agent'
 description: 'Create a new implementation plan file for new features, refactoring existing code or upgrading packages, design, architecture or infrastructure.'
-tools: ['changes', 'search/codebase', 'edit/editFiles', 'extensions', 'fetch', 'githubRepo', 'openSimpleBrowser', 'problems', 'runTasks', 'search', 'search/searchResults', 'runCommands/terminalLastCommand', 'runCommands/terminalSelection', 'testFailure', 'usages', 'vscodeAPI']
+tools: ['vscode/extensions', 'vscode/openSimpleBrowser', 'vscode/vscodeAPI', 'execute/runTask', 'execute/getTaskOutput', 'execute/createAndRunTask', 'execute/testFailure', 'read/terminalSelection', 'read/terminalLastCommand', 'read/problems', 'read/readFile', 'edit/createFile', 'edit/editFiles', 'search', 'web']
 ---
 # Create Implementation Plan
 

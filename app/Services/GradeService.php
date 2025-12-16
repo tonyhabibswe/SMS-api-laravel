@@ -8,6 +8,7 @@ use App\DTOs\Grade\GradeDetailDTO;
 use App\DTOs\CourseSection\GradesTableDTO;
 use App\DTOs\CourseSection\GradesTableColumnDTO;
 use App\DTOs\CourseSection\GradesTableRowDTO;
+use App\Helpers\LetterGradeHelper;
 use App\Models\Grade;
 use App\Repositories\GradeRepository;
 use App\Repositories\GradeableCategoryRepository;
@@ -213,6 +214,9 @@ class GradeService
         // Add final grade column
         $columns[] = new GradesTableColumnDTO('finalGrade', 'Final Grade', 'calculated');
 
+        // Add letter grade column
+        $columns[] = new GradesTableColumnDTO('letterGrade', 'Letter Grade', 'calculated');
+
         // Filter enrollments
         $enrollments = $courseSection->courseEnrollments;
         if (!$includeInactive) {
@@ -267,6 +271,9 @@ class GradeService
             // Calculate final grade
             $finalGrade = round(array_sum($categoryWeightedScores), 2);
 
+            // Calculate letter grade from final grade
+            $letterGrade = LetterGradeHelper::calculate($finalGrade);
+
             // Create row DTO
             $rows[] = new GradesTableRowDTO(
                 enrollmentId: $enrollment->id,
@@ -274,9 +281,21 @@ class GradeService
                 studentName: trim(($enrollment->student->first_name ?? '') . ' ' . ($enrollment->student->last_name ?? '')),
                 enrollmentStatus: $enrollment->status_id == 1 ? 'active' : 'inactive',
                 grades: $grades,
-                finalGrade: $finalGrade
+                finalGrade: $finalGrade,
+                letterGrade: $letterGrade
             );
         }
+
+        // Calculate class average from valid final grades (excluding 0.00)
+        // Uses arithmetic mean rounded to 2 decimal places
+        $validGrades = array_filter(
+            array_map(fn($row) => $row->finalGrade, $rows),
+            fn($grade) => $grade > 0
+        );
+
+        $classAverage = count($validGrades) > 0
+            ? round(array_sum($validGrades) / count($validGrades), 2)
+            : 0.00;
 
         // Create and return table DTO
         return new GradesTableDTO(
@@ -284,6 +303,7 @@ class GradeService
             courseName: ($courseSection->course->code ?? '') . ' - ' . ($courseSection->course->name ?? ''),
             semesterName: $courseSection->semester->name ?? '',
             totalStudents: count($rows),
+            classAverage: $classAverage,
             columns: $columns,
             rows: $rows
         );

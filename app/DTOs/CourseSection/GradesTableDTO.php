@@ -13,6 +13,7 @@ class GradesTableDTO
         public string $courseName,
         public string $semesterName,
         public int $totalStudents,
+        public float $classAverage,
         public array $columns,
         public array $rows
     ) {}
@@ -24,6 +25,7 @@ class GradesTableDTO
             'courseName' => $this->courseName,
             'semesterName' => $this->semesterName,
             'totalStudents' => $this->totalStudents,
+            'classAverage' => $this->classAverage,
             'columns' => array_map(fn($col) => $col->toArray(), $this->columns),
             'rows' => array_map(fn($row) => $row->toArray(), $this->rows),
         ];
