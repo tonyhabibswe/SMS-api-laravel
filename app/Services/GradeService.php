@@ -217,6 +217,10 @@ class GradeService
         // Add letter grade column
         $columns[] = new GradesTableColumnDTO('letterGrade', 'Letter Grade', 'calculated');
 
+        // Add curved grade columns
+        $columns[] = new GradesTableColumnDTO('curvedFinalGrade', 'Curved Final Grade', 'calculated');
+        $columns[] = new GradesTableColumnDTO('curvedLetterGrade', 'Curved Letter Grade', 'calculated');
+
         // Filter enrollments
         $enrollments = $courseSection->courseEnrollments;
         if (!$includeInactive) {
@@ -274,6 +278,10 @@ class GradeService
             // Calculate letter grade from final grade
             $letterGrade = LetterGradeHelper::calculate($finalGrade);
 
+            // Initialize curved grades (will be recalculated after class average)
+            $curvedFinalGrade = $finalGrade;
+            $curvedLetterGrade = $letterGrade;
+
             // Create row DTO
             $rows[] = new GradesTableRowDTO(
                 enrollmentId: $enrollment->id,
@@ -282,7 +290,9 @@ class GradeService
                 enrollmentStatus: $enrollment->status_id == 1 ? 'active' : 'inactive',
                 grades: $grades,
                 finalGrade: $finalGrade,
-                letterGrade: $letterGrade
+                letterGrade: $letterGrade,
+                curvedFinalGrade: $curvedFinalGrade,
+                curvedLetterGrade: $curvedLetterGrade
             );
         }
 
@@ -297,6 +307,36 @@ class GradeService
             ? round(array_sum($validGrades) / count($validGrades), 2)
             : 0.00;
 
+        // Retrieve curve algorithm and calculate curve adjustment
+        $curveAlgorithm = $courseSection->curve_algorithm;
+        $curveAdjustment = 0.0;
+
+        if ($curveAlgorithm === 'AVERAGE_BASED') {
+            // Determine curve adjustment based on class average thresholds
+            if ($classAverage >= 80.00) {
+                $curveAdjustment = 1.0;
+            } elseif ($classAverage >= 75.00) {
+                $curveAdjustment = 2.0;
+            } elseif ($classAverage >= 70.00) {
+                $curveAdjustment = 3.0;
+            } else {
+                $curveAdjustment = 4.0;
+            }
+
+            // Apply curve to each row: round final grade to integer, then add adjustment
+            foreach ($rows as $row) {
+                $roundedFinalGrade = round($row->finalGrade, 0); // Round to nearest integer
+                $row->curvedFinalGrade = min($roundedFinalGrade + $curveAdjustment, 100.00); // Cap at 100.00
+                $row->curvedLetterGrade = LetterGradeHelper::calculate($row->curvedFinalGrade);
+            }
+        } else {
+            // No curve applied: curvedFinalGrade equals finalGrade
+            foreach ($rows as $row) {
+                $row->curvedFinalGrade = $row->finalGrade;
+                $row->curvedLetterGrade = $row->letterGrade;
+            }
+        }
+
         // Create and return table DTO
         return new GradesTableDTO(
             courseSectionId: $courseSection->id,
@@ -304,6 +344,8 @@ class GradeService
             semesterName: $courseSection->semester->name ?? '',
             totalStudents: count($rows),
             classAverage: $classAverage,
+            curveAlgorithm: $curveAlgorithm,
+            curveAdjustment: $curveAdjustment,
             columns: $columns,
             rows: $rows
         );

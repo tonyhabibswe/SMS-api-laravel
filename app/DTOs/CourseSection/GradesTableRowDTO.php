@@ -11,7 +11,9 @@ class GradesTableRowDTO
         public string $enrollmentStatus,
         public array $grades, // Dynamic keys for item_X and category_X
         public float $finalGrade,
-        public ?string $letterGrade
+        public ?string $letterGrade,
+        public float $curvedFinalGrade,
+        public ?string $curvedLetterGrade
     ) {}
 
     public function toArray(): array
@@ -24,6 +26,8 @@ class GradesTableRowDTO
         ], $this->grades, [
             'finalGrade' => $this->finalGrade,
             'letterGrade' => $this->letterGrade,
+            'curvedFinalGrade' => $this->curvedFinalGrade,
+            'curvedLetterGrade' => $this->curvedLetterGrade,
         ]);
     }
 }

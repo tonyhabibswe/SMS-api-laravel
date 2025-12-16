@@ -14,6 +14,7 @@ class CourseSection extends Model
         'semester_id',
         'section_code',
         'time',
+        'curve_algorithm', // Curve algorithm to apply: NULL (no curve), AVERAGE_BASED, etc.
     ];
 
     public function course()
