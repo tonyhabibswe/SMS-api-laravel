@@ -31,8 +31,15 @@ class GetGradesTableRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         // Get courseSectionId from route parameter
-        $this->merge([
+        $data = [
             'courseSectionId' => $this->route('courseSectionId'),
-        ]);
+        ];
+        
+        // Convert includeInactive string to boolean if present
+        if ($this->has('includeInactive')) {
+            $data['includeInactive'] = filter_var($this->input('includeInactive'), FILTER_VALIDATE_BOOLEAN);
+        }
+        
+        $this->merge($data);
     }
 }
