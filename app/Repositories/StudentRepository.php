@@ -133,6 +133,8 @@ class StudentRepository
                 'students.campus',
                 'course_enrollments.status_id'
             )
+            ->orderBy('students.last_name', 'asc')
+            ->orderBy('students.first_name', 'asc')
             ->get();
     }
 }
