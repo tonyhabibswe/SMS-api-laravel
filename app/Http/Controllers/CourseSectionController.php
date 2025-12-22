@@ -63,7 +63,8 @@ class CourseSectionController extends Controller
             $request->courseDays,
             $request->startSessionTime,
             $request->endSessionTime,
-            $request->room
+            $request->room,
+            $request->curveAlgorithm
         );
 
         try {
@@ -88,7 +89,8 @@ class CourseSectionController extends Controller
         // Build the DTO from the validated request data and route parameter.
         $editDTO = new CourseSectionEditDTO(
             $id,
-            $request->sectionCode
+            $request->sectionCode,
+            $request->curveAlgorithm
         );
 
         // Call the service layer to update the course section.

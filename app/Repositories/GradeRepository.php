@@ -36,6 +36,33 @@ class GradeRepository
     }
 
     /**
+     * Find a grade by enrollment ID and gradeable item ID.
+     */
+    public function findByEnrollmentAndItem(int $enrollmentId, int $gradeableItemId): ?Grade
+    {
+        return Grade::with(['gradeableItem', 'courseEnrollment'])
+            ->where('course_enrollment_id', $enrollmentId)
+            ->where('gradeable_item_id', $gradeableItemId)
+            ->first();
+    }
+
+    /**
+     * Find a grade by enrollment ID and gradeable item ID or throw exception.
+     */
+    public function findByEnrollmentAndItemOrFail(int $enrollmentId, int $gradeableItemId): Grade
+    {
+        $grade = $this->findByEnrollmentAndItem($enrollmentId, $gradeableItemId);
+
+        if (!$grade) {
+            throw new ModelNotFoundException(
+                "Grade not found for enrollment ID {$enrollmentId} and gradeable item ID {$gradeableItemId}"
+            );
+        }
+
+        return $grade;
+    }
+
+    /**
      * Get all grades for a specific gradeable item.
      */
     public function getByGradeableItem(int $gradeableItemId): Collection

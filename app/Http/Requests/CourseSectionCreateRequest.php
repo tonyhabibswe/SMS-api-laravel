@@ -30,6 +30,7 @@ class CourseSectionCreateRequest extends FormRequest
             'startSessionTime' => 'required|date_format:H:i',
             'endSessionTime' => 'required|date_format:H:i|after:start_session_time',
             'room' => 'required|string|max:100',
+            'curveAlgorithm' => 'nullable|string|in:AVERAGE_BASED',
         ];
     }
 }

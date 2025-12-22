@@ -145,8 +145,9 @@ class GradeController extends Controller
      *                 property="grades",
      *                 type="array",
      *                 @OA\Items(
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="gradeValue", type="number", format="float", example=85.50)
+     *                     @OA\Property(property="enrollmentId", type="integer", example=148),
+     *                     @OA\Property(property="gradeableItemId", type="integer", example=2),
+     *                     @OA\Property(property="gradeValue", type="number", format="float", example=12.00)
      *                 )
      *             )
      *         )

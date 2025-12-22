@@ -22,7 +22,8 @@ class CourseSectionEditRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'sectionCode' => 'required|string|max:2',          // Required and must be a string
+            'sectionCode' => 'required|string|max:2',
+            'curveAlgorithm' => 'nullable|string|in:AVERAGE_BASED',
         ];
     }
 }

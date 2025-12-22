@@ -11,6 +11,7 @@ class CourseSectionCreateDTO
     public string $startSessionTime;
     public string $endSessionTime;
     public string $room;
+    public ?string $curveAlgorithm;
 
     public function __construct(
         int $semesterId,
@@ -19,7 +20,8 @@ class CourseSectionCreateDTO
         array $courseDays,
         string $startSessionTime,
         string $endSessionTime,
-        string $room
+        string $room,
+        ?string $curveAlgorithm = null
     ) {
         $this->semesterId      = $semesterId;
         $this->courseId        = $courseId;
@@ -28,5 +30,6 @@ class CourseSectionCreateDTO
         $this->startSessionTime = $startSessionTime;
         $this->endSessionTime   = $endSessionTime;
         $this->room             = $room;
+        $this->curveAlgorithm   = $curveAlgorithm;
     }
 }

@@ -11,8 +11,9 @@ class CourseSectionListDTO
     public string $sectionCode;
     public ?string $room;
     public ?array $session;
+    public ?string $curveAlgorithm;
 
-    public function __construct(int $id, string $code, string $name, string $time, string $sectionCode, ?string $room, ?array $session = null)
+    public function __construct(int $id, string $code, string $name, string $time, string $sectionCode, ?string $room, ?array $session = null, ?string $curveAlgorithm = null)
     {
         $this->id           = $id;
         $this->code         = $code;
@@ -21,6 +22,7 @@ class CourseSectionListDTO
         $this->sectionCode = $sectionCode;
         $this->session      = $session;
         $this->room        = $room;
+        $this->curveAlgorithm = $curveAlgorithm;
     }
 
     /**
@@ -45,7 +47,8 @@ class CourseSectionListDTO
             $courseSection->time,
             $courseSection->section_code,
             $sessionData["room"] ?? null,
-            $sessionData
+            $sessionData,
+            $courseSection->curve_algorithm
         );
     }
 }

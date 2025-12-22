@@ -68,6 +68,7 @@ class CourseSectionService
             'semester_id'  => $semester->id,
             'section_code' => $dto->sectionCode,
             'time'         => $courseSectionTime,
+            'curve_algorithm' => $dto->curveAlgorithm,
         ]);
 
         // Parse the start and end dates of the semester to carbon date objects.

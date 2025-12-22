@@ -66,6 +66,11 @@ class CourseSectionRepository
         }
 
         $courseSection->section_code = $dto->sectionCode;
+        
+        if ($dto->curveAlgorithm !== null) {
+            $courseSection->curve_algorithm = $dto->curveAlgorithm;
+        }
+        
         $courseSection->save();
 
         return $courseSection;

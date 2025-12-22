@@ -25,10 +25,15 @@ class BulkGradeUpdateRequest extends FormRequest
                 'array',
                 'min:1'
             ],
-            'grades.*.id' => [
+            'grades.*.enrollmentId' => [
                 'required',
                 'integer',
-                'exists:grades,id'
+                'exists:course_enrollments,id'
+            ],
+            'grades.*.gradeableItemId' => [
+                'required',
+                'integer',
+                'exists:gradeable_items,id'
             ],
             'grades.*.gradeValue' => [
                 'required',
@@ -48,8 +53,10 @@ class BulkGradeUpdateRequest extends FormRequest
             'grades.required' => 'Grades array is required.',
             'grades.array' => 'Grades must be an array.',
             'grades.min' => 'At least one grade is required.',
-            'grades.*.id.required' => 'Grade ID is required.',
-            'grades.*.id.exists' => 'One or more grade IDs do not exist.',
+            'grades.*.enrollmentId.required' => 'Enrollment ID is required for each grade.',
+            'grades.*.enrollmentId.exists' => 'One or more enrollment IDs do not exist.',
+            'grades.*.gradeableItemId.required' => 'Gradeable item ID is required for each grade.',
+            'grades.*.gradeableItemId.exists' => 'One or more gradeable item IDs do not exist.',
             'grades.*.gradeValue.required' => 'Grade value is required for each grade.',
             'grades.*.gradeValue.numeric' => 'Grade value must be a number.',
             'grades.*.gradeValue.min' => 'Grade value must be at least 0.',

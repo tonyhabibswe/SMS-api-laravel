@@ -81,7 +81,7 @@ class GradeService
     /**
      * Bulk update multiple grades at once.
      *
-     * @param array $grades Array of ['id' => gradeId, 'gradeValue' => value]
+     * @param array $grades Array of ['enrollmentId' => int, 'gradeableItemId' => int, 'gradeValue' => float]
      */
     public function bulkUpdateGrades(array $grades): Collection
     {
@@ -89,8 +89,15 @@ class GradeService
             $updatedGrades = collect();
 
             foreach ($grades as $gradeData) {
-                $grade = $this->updateGrade($gradeData['id'], $gradeData['gradeValue']);
-                $updatedGrades->push($grade);
+                // Find the grade by enrollmentId and gradeableItemId
+                $grade = $this->repository->findByEnrollmentAndItemOrFail(
+                    $gradeData['enrollmentId'],
+                    $gradeData['gradeableItemId']
+                );
+
+                // Update the grade using the existing updateGrade method
+                $updatedGrade = $this->updateGrade($grade->id, $gradeData['gradeValue']);
+                $updatedGrades->push($updatedGrade);
             }
 
             return $updatedGrades;
@@ -201,9 +208,13 @@ class GradeService
             }
 
             // Add category column after all its items
+            $weightFormatted = fmod($category->weight_percent, 1) === 0.0
+                ? number_format($category->weight_percent, 0)
+                : rtrim(rtrim(number_format($category->weight_percent, 2), '0'), '.');
+
             $columns[] = new GradesTableColumnDTO(
                 key: "category_{$category->id}",
-                label: "{$category->name} ({$category->weight_percent}%)",
+                label: "{$category->name} ({$weightFormatted}%)",
                 type: 'category',
                 categoryId: $category->id,
                 weightPercent: (float) $category->weight_percent,
