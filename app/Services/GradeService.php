@@ -169,9 +169,30 @@ class GradeService
     }
 
     /**
+     * Check if enrollment status requires grade override.
+     */
+    protected function requiresGradeOverride(string $statusName): bool
+    {
+        return in_array(strtolower($statusName), ['withdrawn', 'unofficial_withdrawn', 'incomplete']);
+    }
+
+    /**
+     * Get letter grade based on status name.
+     */
+    protected function getStatusLetterGrade(string $statusName): string
+    {
+        return match (strtolower($statusName)) {
+            'withdrawn' => 'W',
+            'unofficial_withdrawn' => 'UW',
+            'incomplete' => 'I',
+            default => '',
+        };
+    }
+
+    /**
      * Get grades table for course section with all students and calculations.
      */
-    public function getGradesTableForCourseSection(int $courseSectionId, bool $includeInactive = false): GradesTableDTO
+    public function getGradesTableForCourseSection(int $courseSectionId): GradesTableDTO
     {
         // Retrieve course section with relations
         $courseSection = $this->courseSectionRepository->getCourseSectionWithRelations($courseSectionId);
@@ -232,11 +253,8 @@ class GradeService
         $columns[] = new GradesTableColumnDTO('curvedFinalGrade', 'Curved Final Grade', 'calculated');
         $columns[] = new GradesTableColumnDTO('curvedLetterGrade', 'Curved Letter Grade', 'calculated');
 
-        // Filter enrollments
+        // Always include all enrollments (removed includeInactive filter)
         $enrollments = $courseSection->courseEnrollments;
-        if (!$includeInactive) {
-            $enrollments = $enrollments->filter(fn($enrollment) => $enrollment->status_id == 1); // active only
-        }
 
         // Sort enrollments by student name
         $enrollments = $enrollments->sortBy([
@@ -249,6 +267,10 @@ class GradeService
         foreach ($enrollments as $enrollment) {
             $grades = [];
             $categoryWeightedScores = [];
+
+            // Get status name for this enrollment
+            $statusName = $enrollment->status?->name ?? 'enrolled';
+            $requiresOverride = $this->requiresGradeOverride($statusName);
 
             // Get grades for this enrollment
             $enrollmentGrades = $gradesGrouped->get($enrollment->id, collect());
@@ -283,15 +305,22 @@ class GradeService
                 $categoryWeightedScores[] = $categoryWeightedScore;
             }
 
-            // Calculate final grade
+            // Calculate final grade and letter grade
             $finalGrade = round(array_sum($categoryWeightedScores), 2);
-
-            // Calculate letter grade from final grade
             $letterGrade = LetterGradeHelper::calculate($finalGrade);
 
-            // Initialize curved grades (will be recalculated after class average)
-            $curvedFinalGrade = $finalGrade;
-            $curvedLetterGrade = $letterGrade;
+            // Apply status-based overrides
+            if ($requiresOverride) {
+                $statusLetterGrade = $this->getStatusLetterGrade($statusName);
+                $finalGrade = null;
+                $letterGrade = $statusLetterGrade;
+                $curvedFinalGrade = null;
+                $curvedLetterGrade = $statusLetterGrade;
+            } else {
+                // Initialize curved grades (will be recalculated after class average)
+                $curvedFinalGrade = $finalGrade;
+                $curvedLetterGrade = $letterGrade;
+            }
 
             // Create row DTO
             $rows[] = new GradesTableRowDTO(
@@ -307,11 +336,11 @@ class GradeService
             );
         }
 
-        // Calculate class average from valid final grades (excluding 0.00)
+        // Calculate class average from valid final grades (excluding NULL and 0.00)
         // Uses arithmetic mean rounded to 2 decimal places
         $validGrades = array_filter(
             array_map(fn($row) => $row->finalGrade, $rows),
-            fn($grade) => $grade > 0
+            fn($grade) => $grade !== null && $grade > 0
         );
 
         $classAverage = count($validGrades) > 0
@@ -336,6 +365,11 @@ class GradeService
 
             // Apply curve to each row: round final grade to integer, then add adjustment
             foreach ($rows as $row) {
+                // Skip status-based overrides (already have NULL grades)
+                if ($row->finalGrade === null) {
+                    continue;
+                }
+
                 $roundedFinalGrade = round($row->finalGrade, 0); // Round to nearest integer
                 $row->curvedFinalGrade = min($roundedFinalGrade + $curveAdjustment, 100.00); // Cap at 100.00
                 $row->curvedLetterGrade = LetterGradeHelper::calculate($row->curvedFinalGrade);
@@ -343,6 +377,11 @@ class GradeService
         } else {
             // No curve applied: curvedFinalGrade equals finalGrade
             foreach ($rows as $row) {
+                // Skip status-based overrides (already set)
+                if ($row->finalGrade === null) {
+                    continue;
+                }
+
                 $row->curvedFinalGrade = $row->finalGrade;
                 $row->curvedLetterGrade = $row->letterGrade;
             }

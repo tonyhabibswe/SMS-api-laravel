@@ -10,9 +10,9 @@ class GradesTableRowDTO
         public string $studentName,
         public string $enrollmentStatus,
         public array $grades, // Dynamic keys for item_X and category_X
-        public float $finalGrade,
+        public ?float $finalGrade,
         public ?string $letterGrade,
-        public float $curvedFinalGrade,
+        public ?float $curvedFinalGrade,
         public ?string $curvedLetterGrade
     ) {}
 

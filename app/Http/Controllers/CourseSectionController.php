@@ -252,12 +252,6 @@ class CourseSectionController extends Controller
      *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
-     *     @OA\Parameter(
-     *         name="includeInactive",
-     *         in="query",
-     *         required=false,
-     *         @OA\Schema(type="boolean", default=false)
-     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Grades table retrieved successfully",
@@ -290,8 +284,7 @@ class CourseSectionController extends Controller
     {
         try {
             $gradesTableDTO = $this->gradeService->getGradesTableForCourseSection(
-                $courseSectionId,
-                $request->input('includeInactive', false)
+                $courseSectionId
             );
 
             $responseDTO = new SuccessResponseDTO(
