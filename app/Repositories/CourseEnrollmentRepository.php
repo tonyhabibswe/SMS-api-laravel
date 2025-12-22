@@ -81,7 +81,13 @@ class CourseEnrollmentRepository
     public function update(CourseEnrollment $enrollment, array $data): CourseEnrollment
     {
         $enrollment->update($data);
-        return $enrollment->fresh(['student', 'major', 'courseSection', 'status']);
+        return $enrollment->fresh([
+            'student',
+            'major',
+            'courseSection.course',
+            'courseSection.semester',
+            'status'
+        ]);
     }
 
     /**

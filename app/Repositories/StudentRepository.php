@@ -106,7 +106,7 @@ class StudentRepository
             ->leftJoin('course_sessions', 'attendances.course_session_id', '=', 'course_sessions.id')
             ->where('course_enrollments.course_section_id', '=', $courseSectionId)
             ->select(
-                'students.id',
+                'course_enrollments.id',
                 'students.student_id',
                 'students.first_name',
                 'students.father_name',
@@ -115,12 +115,13 @@ class StudentRepository
                 DB::raw('COALESCE(majors.label, majors.system_name, students.major) as major'),
                 'students.email',
                 'students.campus',
+                'course_enrollments.status_id as statusId',
                 DB::raw("SUM(CASE WHEN attendances.value = 'abscent' THEN 1 ELSE 0 END) as abscences"),
                 DB::raw('SUM(CASE WHEN attendances.value IS NOT NULL THEN 1 ELSE 0 END) as sessions'),
                 DB::raw('COUNT(attendances.id) as total_sessions')
             )
             ->groupBy(
-                'students.id',
+                'course_enrollments.id',
                 'students.student_id',
                 'students.first_name',
                 'students.father_name',
@@ -129,7 +130,8 @@ class StudentRepository
                 'majors.label',
                 'majors.system_name',
                 'students.email',
-                'students.campus'
+                'students.campus',
+                'course_enrollments.status_id'
             )
             ->get();
     }

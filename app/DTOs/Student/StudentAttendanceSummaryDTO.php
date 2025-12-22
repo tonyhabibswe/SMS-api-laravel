@@ -12,6 +12,7 @@ class StudentAttendanceSummaryDTO
     public string $major;
     public string $email;
     public string $campus;
+    public int $statusId;
     public int $abscences;
     public int $sessions;
     public int $totalSessions;
@@ -25,6 +26,7 @@ class StudentAttendanceSummaryDTO
         string $major,
         string $email,
         string $campus,
+        int $statusId,
         int $abscences,
         int $sessions,
         int $totalSessions
@@ -37,6 +39,7 @@ class StudentAttendanceSummaryDTO
         $this->major          = $major;
         $this->email          = $email;
         $this->campus         = $campus;
+        $this->statusId       = $statusId;
         $this->abscences      = $abscences;
         $this->sessions       = $sessions;
         $this->totalSessions = $totalSessions;
@@ -59,6 +62,7 @@ class StudentAttendanceSummaryDTO
             $row->major,
             $row->email,
             $row->campus,
+            (int) $row->statusId,
             (int) $row->abscences,
             (int) $row->sessions,
             (int) $row->total_sessions

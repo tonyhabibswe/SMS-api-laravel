@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DTOs\CourseEnrollment\CourseEnrollmentCreateDTO;
 use App\DTOs\CourseEnrollment\CourseEnrollmentListDTO;
+use App\DTOs\CourseEnrollment\CourseEnrollmentStudentDTO;
 use App\DTOs\ErrorResponseDTO;
 use App\DTOs\SuccessResponseDTO;
 use App\Services\CourseEnrollmentService;
@@ -43,7 +44,7 @@ class CourseEnrollmentController extends Controller
         $enrollments = $this->service->getEnrollmentsBySectionId($sectionId);
 
         $dtos = $enrollments->map(function ($enrollment) {
-            return CourseEnrollmentListDTO::fromModel($enrollment);
+            return CourseEnrollmentStudentDTO::fromModel($enrollment)->toArray();
         });
 
         $responseDTO = new SuccessResponseDTO(200, 'Enrollments retrieved successfully', $dtos);

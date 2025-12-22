@@ -79,8 +79,8 @@ class CourseEnrollmentListDTO
             $enrollment->status?->label ?? 'Unknown',
             $enrollment->final_grade,
             $enrollment->letter_grade,
-            $enrollment->created_at->toISOString(),
-            $enrollment->updated_at->toISOString()
+            $enrollment->created_at?->toISOString() ?? now()->toISOString(),
+            $enrollment->updated_at?->toISOString() ?? now()->toISOString()
         );
     }
 
