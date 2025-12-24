@@ -222,7 +222,12 @@ class GradesSheet implements FromArray, ShouldAutoSize, WithEvents, WithTitle
                 $curvedLetterGradeColumnIndex = null;
                 $categoryColumnIndices = [];
 
+                // Find identifier columns (studentId, studentName)
+                $identifierColumnIndices = [];
                 foreach ($this->gradesTableDTO->columns as $idx => $col) {
+                    if ($col->type === 'identifier') {
+                        $identifierColumnIndices[] = $idx + 1;
+                    }
                     if ($col->key === 'finalGrade') {
                         $finalGradeColumnIndex = $idx + 1;
                     } elseif ($col->key === 'curvedFinalGrade') {
@@ -236,39 +241,54 @@ class GradesSheet implements FromArray, ShouldAutoSize, WithEvents, WithTitle
                     }
                 }
 
+                // Calculate dynamic column positions for averages
+                // Skip one column after the table, then place labels and values
+                $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
+                $labelColumnIndex = $highestColumnIndex + 2; // Skip one column
+                $valueColumnIndex = $labelColumnIndex + 1;
+                $labelColumn = Coordinate::stringFromColumnIndex($labelColumnIndex);
+                $valueColumn = Coordinate::stringFromColumnIndex($valueColumnIndex);
+
                 // Add average labels and formulas to the right of the table
-                // N1: "Average"
-                $sheet->setCellValue('N1', 'Average');
-                $sheet->getStyle('N1')->getFont()->setBold(true);
+                // Label column, row 1: "Average"
+                $sheet->setCellValue("{$labelColumn}1", 'Average');
+                $sheet->getStyle("{$labelColumn}1")->getFont()->setBold(true);
 
-                // N2: "Final Grade"
-                $sheet->setCellValue('N2', 'Final Grade');
-                $sheet->getStyle('N2')->getFont()->setBold(true);
+                // Label column, row 2: "Final Grade"
+                $sheet->setCellValue("{$labelColumn}2", 'Final Grade');
+                $sheet->getStyle("{$labelColumn}2")->getFont()->setBold(true);
 
-                // O2: Average of Final Grade column with 2 decimal points
+                // Value column, row 2: Average of Final Grade column with 2 decimal points
                 if ($finalGradeColumnIndex) {
                     $finalGradeColLetter = Coordinate::stringFromColumnIndex($finalGradeColumnIndex);
-                    $sheet->setCellValue('O2', "=ROUND(AVERAGE({$finalGradeColLetter}2:{$finalGradeColLetter}{$highestRow}),2)");
+                    $sheet->setCellValue("{$valueColumn}2", "=ROUND(AVERAGE({$finalGradeColLetter}2:{$finalGradeColLetter}{$highestRow}),2)");
                 }
 
-                // N3: "Curved Final Grade"
-                $sheet->setCellValue('N3', 'Curved Final Grade');
-                $sheet->getStyle('N3')->getFont()->setBold(true);
+                // Label column, row 3: "Curved Final Grade"
+                $sheet->setCellValue("{$labelColumn}3", 'Curved Final Grade');
+                $sheet->getStyle("{$labelColumn}3")->getFont()->setBold(true);
 
-                // O3: Average of Curved Final Grade column with 2 decimal points
+                // Value column, row 3: Average of Curved Final Grade column with 2 decimal points
                 if ($curvedFinalGradeColumnIndex) {
                     $curvedFinalGradeColLetter = Coordinate::stringFromColumnIndex($curvedFinalGradeColumnIndex);
-                    $sheet->setCellValue('O3', "=ROUND(AVERAGE({$curvedFinalGradeColLetter}2:{$curvedFinalGradeColLetter}{$highestRow}),2)");
+                    $sheet->setCellValue("{$valueColumn}3", "=ROUND(AVERAGE({$curvedFinalGradeColLetter}2:{$curvedFinalGradeColLetter}{$highestRow}),2)");
                 }
 
-                // Auto-fit all columns
-                foreach (range('A', 'O') as $columnID) {
-                    $sheet->getColumnDimension($columnID)->setAutoSize(true);
+                // Auto-fit all columns including the new average columns
+                for ($col = 1; $col <= $valueColumnIndex; $col++) {
+                    $colLetter = Coordinate::stringFromColumnIndex($col);
+                    $sheet->getColumnDimension($colLetter)->setAutoSize(true);
                 }
 
                 // Apply number format with 2 decimal points to all data cells
                 $dataRange = 'A2:' . $highestColumn . $highestRow;
                 $sheet->getStyle($dataRange)->getNumberFormat()->setFormatCode('0.00');
+
+                // Remove decimal format from identifier columns (studentId should not have decimals)
+                foreach ($identifierColumnIndices as $colIndex) {
+                    $colLetter = Coordinate::stringFromColumnIndex($colIndex);
+                    $sheet->getStyle("{$colLetter}2:{$colLetter}{$highestRow}")->getNumberFormat()->setFormatCode('@'); // Text format
+                }
 
                 // Make category columns bold
                 foreach ($categoryColumnIndices as $colIndex) {
@@ -298,6 +318,31 @@ class GradesSheet implements FromArray, ShouldAutoSize, WithEvents, WithTitle
                 if ($curvedLetterGradeColumnIndex) {
                     $colLetter = Coordinate::stringFromColumnIndex($curvedLetterGradeColumnIndex);
                     $sheet->getStyle("{$colLetter}2:{$colLetter}{$highestRow}")->getFont()->setBold(true);
+                }
+
+                // Apply red color to specific letter grades (W, UW, I, F)
+                $redGrades = ['W', 'UW', 'I', 'F'];
+
+                // Color letterGrade column
+                if ($letterGradeColumnIndex) {
+                    $colLetter = Coordinate::stringFromColumnIndex($letterGradeColumnIndex);
+                    for ($row = 2; $row <= $highestRow; $row++) {
+                        $cellValue = $sheet->getCell("{$colLetter}{$row}")->getValue();
+                        if (in_array($cellValue, $redGrades)) {
+                            $sheet->getStyle("{$colLetter}{$row}")->getFont()->getColor()->setRGB('FF0000');
+                        }
+                    }
+                }
+
+                // Color curvedLetterGrade column
+                if ($curvedLetterGradeColumnIndex) {
+                    $colLetter = Coordinate::stringFromColumnIndex($curvedLetterGradeColumnIndex);
+                    for ($row = 2; $row <= $highestRow; $row++) {
+                        $cellValue = $sheet->getCell("{$colLetter}{$row}")->getValue();
+                        if (in_array($cellValue, $redGrades)) {
+                            $sheet->getStyle("{$colLetter}{$row}")->getFont()->getColor()->setRGB('FF0000');
+                        }
+                    }
                 }
 
                 // Style header row

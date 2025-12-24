@@ -309,7 +309,7 @@ class GradeService
             }
 
             // Calculate final grade and letter grade
-            $finalGrade = round(array_sum($categoryWeightedScores), 2);
+            $finalGrade = round(array_sum($categoryWeightedScores), 0);
             $letterGrade = LetterGradeHelper::calculate($finalGrade);
 
             // Apply status-based overrides
