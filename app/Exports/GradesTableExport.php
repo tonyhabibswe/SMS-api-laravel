@@ -18,17 +18,19 @@ class GradesTableExport implements WithMultipleSheets
 {
     protected GradesTableDTO $gradesTableDTO;
     protected int $courseSectionId;
+    protected $courseSection;
 
-    public function __construct(GradesTableDTO $gradesTableDTO, int $courseSectionId)
+    public function __construct(GradesTableDTO $gradesTableDTO, int $courseSectionId, $courseSection = null)
     {
         $this->gradesTableDTO = $gradesTableDTO;
         $this->courseSectionId = $courseSectionId;
+        $this->courseSection = $courseSection;
     }
 
     public function sheets(): array
     {
         return [
-            new GradesSheet($this->gradesTableDTO),
+            new GradesSheet($this->gradesTableDTO, $this->courseSection),
             new AttendanceSheetForGrades($this->courseSectionId),
         ];
     }
@@ -37,10 +39,12 @@ class GradesTableExport implements WithMultipleSheets
 class GradesSheet implements FromArray, ShouldAutoSize, WithEvents, WithTitle
 {
     protected GradesTableDTO $gradesTableDTO;
+    protected $courseSection;
 
-    public function __construct(GradesTableDTO $gradesTableDTO)
+    public function __construct(GradesTableDTO $gradesTableDTO, $courseSection = null)
     {
         $this->gradesTableDTO = $gradesTableDTO;
+        $this->courseSection = $courseSection;
     }
 
     public function title(): string
@@ -322,13 +326,43 @@ class GradesSheet implements FromArray, ShouldAutoSize, WithEvents, WithTitle
 
                 // Apply red color to specific letter grades (W, UW, I, F)
                 $redGrades = ['W', 'UW', 'I', 'F'];
+                
+                // Fetch passing grades for this course/semester if courseSection is available
+                $passingGrades = [];
+                if ($this->courseSection) {
+                    $passingGradesData = \App\Models\CoursePassingGrade::where('course_id', $this->courseSection->course_id)
+                        ->where('semester_id', $this->courseSection->semester_id)
+                        ->get()
+                        ->keyBy('major_id');
+                    $passingGrades = $passingGradesData->toArray();
+                }
 
                 // Color letterGrade column
                 if ($letterGradeColumnIndex) {
                     $colLetter = Coordinate::stringFromColumnIndex($letterGradeColumnIndex);
                     for ($row = 2; $row <= $highestRow; $row++) {
+                        $rowIndex = $row - 2; // Convert to 0-based index
                         $cellValue = $sheet->getCell("{$colLetter}{$row}")->getValue();
-                        if (in_array($cellValue, $redGrades)) {
+                        $shouldColorRed = in_array($cellValue, $redGrades);
+                        
+                        // Check passing grade if not already marked red
+                        if (!$shouldColorRed && isset($this->gradesTableDTO->rows[$rowIndex])) {
+                            $rowData = $this->gradesTableDTO->rows[$rowIndex];
+                            $finalGrade = $rowData->finalGrade;
+                            
+                            // Get enrollment to find major_id
+                            if ($this->courseSection && $finalGrade !== null) {
+                                $enrollment = \App\Models\CourseEnrollment::find($rowData->enrollmentId);
+                                if ($enrollment && $enrollment->major_id && isset($passingGrades[$enrollment->major_id])) {
+                                    $passingGradeValue = $passingGrades[$enrollment->major_id]['grade_value'];
+                                    if ($finalGrade < $passingGradeValue) {
+                                        $shouldColorRed = true;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if ($shouldColorRed) {
                             $sheet->getStyle("{$colLetter}{$row}")->getFont()->getColor()->setRGB('FF0000');
                         }
                     }
@@ -338,8 +372,28 @@ class GradesSheet implements FromArray, ShouldAutoSize, WithEvents, WithTitle
                 if ($curvedLetterGradeColumnIndex) {
                     $colLetter = Coordinate::stringFromColumnIndex($curvedLetterGradeColumnIndex);
                     for ($row = 2; $row <= $highestRow; $row++) {
+                        $rowIndex = $row - 2; // Convert to 0-based index
                         $cellValue = $sheet->getCell("{$colLetter}{$row}")->getValue();
-                        if (in_array($cellValue, $redGrades)) {
+                        $shouldColorRed = in_array($cellValue, $redGrades);
+                        
+                        // Check passing grade if not already marked red
+                        if (!$shouldColorRed && isset($this->gradesTableDTO->rows[$rowIndex])) {
+                            $rowData = $this->gradesTableDTO->rows[$rowIndex];
+                            $curvedFinalGrade = $rowData->curvedFinalGrade;
+                            
+                            // Get enrollment to find major_id
+                            if ($this->courseSection && $curvedFinalGrade !== null) {
+                                $enrollment = \App\Models\CourseEnrollment::find($rowData->enrollmentId);
+                                if ($enrollment && $enrollment->major_id && isset($passingGrades[$enrollment->major_id])) {
+                                    $passingGradeValue = $passingGrades[$enrollment->major_id]['grade_value'];
+                                    if ($curvedFinalGrade < $passingGradeValue) {
+                                        $shouldColorRed = true;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if ($shouldColorRed) {
                             $sheet->getStyle("{$colLetter}{$row}")->getFont()->getColor()->setRGB('FF0000');
                         }
                     }

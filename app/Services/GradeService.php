@@ -431,7 +431,7 @@ class GradeService
 
         // Create Excel export with both grades and attendance sheets
         $fileContent = ExcelFacade::raw(
-            new GradesTableExport($gradesTableDTO, $courseSectionId),
+            new GradesTableExport($gradesTableDTO, $courseSectionId, $courseSection),
             Excel::XLSX
         );
 
