@@ -128,3 +128,4 @@ Route::post('grades/bulk-update', [GradeController::class, 'bulkUpdate'])->middl
 
 // Course Section Grades Table
 Route::get('course-sections/{courseSectionId}/grades/table', [CourseSectionController::class, 'getGradesTable'])->where('courseSectionId', '[0-9]+')->middleware('auth:api');
+Route::get('course-sections/{courseSectionId}/grades/export', [CourseSectionController::class, 'exportGradesTable'])->where('courseSectionId', '[0-9]+')->middleware('auth:api');

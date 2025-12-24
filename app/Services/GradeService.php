@@ -8,6 +8,7 @@ use App\DTOs\Grade\GradeDetailDTO;
 use App\DTOs\CourseSection\GradesTableDTO;
 use App\DTOs\CourseSection\GradesTableColumnDTO;
 use App\DTOs\CourseSection\GradesTableRowDTO;
+use App\Exports\GradesTableExport;
 use App\Helpers\LetterGradeHelper;
 use App\Models\Grade;
 use App\Repositories\GradeRepository;
@@ -17,6 +18,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Maatwebsite\Excel\Excel;
+use Maatwebsite\Excel\Facades\Excel as ExcelFacade;
 
 class GradeService
 {
@@ -305,8 +308,8 @@ class GradeService
                 $categoryWeightedScores[] = $categoryWeightedScore;
             }
 
-            // Calculate final grade and letter grade (round to nearest integer)
-            $finalGrade = round(array_sum($categoryWeightedScores), 0);
+            // Calculate final grade and letter grade
+            $finalGrade = round(array_sum($categoryWeightedScores), 2);
             $letterGrade = LetterGradeHelper::calculate($finalGrade);
 
             // Apply status-based overrides
@@ -399,5 +402,44 @@ class GradeService
             columns: $columns,
             rows: $rows
         );
+    }
+
+    /**
+     * Export grades table and attendance to Excel file.
+     *
+     * @param int $courseSectionId
+     * @return array ['fileName' => string, 'file' => base64_encoded_string]
+     * @throws ModelNotFoundException
+     */
+    public function exportGradesTable(int $courseSectionId): array
+    {
+        // Get the grades table data
+        $gradesTableDTO = $this->getGradesTableForCourseSection($courseSectionId);
+
+        // Get course section for filename
+        $courseSection = $this->courseSectionRepository->getCourseSectionWithRelations($courseSectionId);
+
+        if (!$courseSection) {
+            throw new ModelNotFoundException("Course section not found");
+        }
+
+        // Generate filename: "{Course Code} - {Section Code} - Grades - Tony Habib - {Semester}.xlsx"
+        $courseCode = $courseSection->course->code ?? 'course';
+        $sectionCode = $courseSection->section_code ?? 'section';
+        $semesterName = $courseSection->semester->name ?? 'semester';
+        $fileName = "{$courseCode} - {$sectionCode} - Grades - Tony Habib - {$semesterName}.xlsx";
+
+        // Create Excel export with both grades and attendance sheets
+        $fileContent = ExcelFacade::raw(
+            new GradesTableExport($gradesTableDTO, $courseSectionId),
+            Excel::XLSX
+        );
+
+        $base64File = base64_encode($fileContent);
+
+        return [
+            'fileName' => $fileName,
+            'file' => $base64File
+        ];
     }
 }

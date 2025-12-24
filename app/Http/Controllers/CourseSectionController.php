@@ -302,4 +302,60 @@ class CourseSectionController extends Controller
             return response()->json($responseDTO->toArray(), 500);
         }
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/course-sections/{courseSectionId}/grades/export",
+     *     summary="Export grades and attendance to Excel",
+     *     tags={"Course Sections", "Grades"},
+     *     @OA\Parameter(
+     *         name="courseSectionId",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Grades and attendance exported successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="statusCode", type="integer", example=200),
+     *             @OA\Property(property="message", type="string", example="Grades and attendance exported successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="fileName", type="string", example="CSC 210 - A - FALL 2025.xlsx"),
+     *                 @OA\Property(property="file", type="string", example="UEsDBBQABgAI...")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Course section not found"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     )
+     * )
+     */
+    public function exportGradesTable(int $courseSectionId): JsonResponse
+    {
+        try {
+            $exportData = $this->gradeService->exportGradesTable($courseSectionId);
+
+            $responseDTO = new SuccessResponseDTO(
+                200,
+                'Grades and attendance exported successfully',
+                $exportData
+            );
+
+            return response()->json($responseDTO->toArray(), 200);
+        } catch (ModelNotFoundException $e) {
+            $responseDTO = new ErrorResponseDTO(404, 'Course section not found', [$e->getMessage()]);
+            return response()->json($responseDTO->toArray(), 404);
+        } catch (\Exception $e) {
+            $responseDTO = new ErrorResponseDTO(500, 'Failed to export grades and attendance', [$e->getMessage()]);
+            return response()->json($responseDTO->toArray(), 500);
+        }
+    }
 }
