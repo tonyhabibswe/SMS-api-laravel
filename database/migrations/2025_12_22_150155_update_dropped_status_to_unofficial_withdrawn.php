@@ -14,7 +14,7 @@ return new class extends Migration
             ->where('name', 'dropped')
             ->update([
                 'name' => 'unofficial_withdrawn',
-                'label' => 'Unofficial Withdrawn',
+                'label' => 'UW',
                 'updated_at' => now(),
             ]);
     }

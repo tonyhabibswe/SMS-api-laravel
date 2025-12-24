@@ -11,8 +11,8 @@ return new class extends Migration
             ['id' => 1, 'name' => 'enrolled', 'label' => 'Enrolled', 'created_at' => now(), 'updated_at' => now()],
             ['id' => 2, 'name' => 'dropped', 'label' => 'Dropped', 'created_at' => now(), 'updated_at' => now()],
             ['id' => 3, 'name' => 'auditor', 'label' => 'Auditor', 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 4, 'name' => 'withdrawn', 'label' => 'Withdrawn', 'created_at' => now(), 'updated_at' => now()],
-            ['id' => 5, 'name' => 'incomplete', 'label' => 'Incomplete', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 4, 'name' => 'withdrawn', 'label' => 'W', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 5, 'name' => 'incomplete', 'label' => 'I', 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 
