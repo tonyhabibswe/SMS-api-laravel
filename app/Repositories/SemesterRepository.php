@@ -44,7 +44,7 @@ class SemesterRepository
      */
     public function getAllSemesters(): Collection
     {
-        return Semester::orderByDesc('id')->get();
+        return Semester::with('holidays')->orderByDesc('id')->get();
     }
 
     /**
