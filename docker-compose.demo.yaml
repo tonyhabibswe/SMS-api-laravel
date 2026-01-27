@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  demo-sms-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: demo-sms-api
+    restart: always
+    expose:
+      - "9000" # Internal PHP-FPM port (not published directly)
+    volumes:
+      - ./:/var/www # Mount host code for development updates (if needed)
+      - vendor_volume:/var/www/vendor # Preserve the vendor folder from the built image
+    environment:
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      - demo-sms-db
+    networks:
+      - demo-sms-network
+
+  demo-sms-db:
+    image: postgres:13-alpine
+    container_name: demo-sms-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks:
+      - demo-sms-network
+networks:
+  demo-sms-network:
+    external: true
+
+volumes:
+  vendor_volume:
+  dbdata:
+    name: demo-sms-dbdata
