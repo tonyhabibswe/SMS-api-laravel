@@ -1,5 +1,5 @@
 # Use PHP 8.2 FPM on Alpine Linux as the base image
-FROM php:8.2-fpm-alpine
+FROM php:8.2.35-fpm-alpine
 
 # Install system dependencies and libraries for required PHP extensions
 RUN apk update && apk add --no-cache \
