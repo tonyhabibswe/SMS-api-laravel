@@ -45,6 +45,9 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 # Override the default PHP-FPM listening address in www.conf
 RUN sed -i 's/listen = 127.0.0.1:9000/listen = 0.0.0.0:9000/g' /usr/local/etc/php-fpm.d/www.conf
 
+# Use PHP's production php.ini (the image ships none). Among other things this
+# turns off register_argc_argv, which Laravel's CVE-2024-52301 relies on.
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 # Run entrypoint.sh
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
