@@ -4,22 +4,27 @@ namespace App\Services;
 
 use App\Exceptions\UserFacingException;
 use App\Repositories\CourseEnrollmentRepository;
+use App\Repositories\GradeRepository;
 use App\Repositories\StudentCourseStatusRepository;
 use App\Models\CourseEnrollment;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CourseEnrollmentService
 {
     protected CourseEnrollmentRepository $repository;
     protected StudentCourseStatusRepository $statusRepository;
+    protected GradeRepository $gradeRepository;
 
     public function __construct(
         CourseEnrollmentRepository $repository,
-        StudentCourseStatusRepository $statusRepository
+        StudentCourseStatusRepository $statusRepository,
+        GradeRepository $gradeRepository
     ) {
         $this->repository = $repository;
         $this->statusRepository = $statusRepository;
+        $this->gradeRepository = $gradeRepository;
     }
 
     /**
@@ -55,22 +60,27 @@ class CourseEnrollmentService
     }
 
     /**
-     * Find or create enrollment for a student in a course section.
+     * Find or create enrollment for a student in a course section, with the
+     * grades an active enrollment is missing.
      */
     public function findOrCreateEnrollment(int $sectionId, int $studentId, int $majorId, int $statusId = 1): CourseEnrollment
     {
-        $enrollment = $this->repository->findByStudentAndSection($sectionId, $studentId);
+        return DB::transaction(function () use ($sectionId, $studentId, $majorId, $statusId) {
+            $enrollment = $this->repository->findByStudentAndSection($sectionId, $studentId);
 
-        if ($enrollment) {
+            if (!$enrollment) {
+                $enrollment = $this->repository->create([
+                    'course_section_id' => $sectionId,
+                    'student_id' => $studentId,
+                    'major_id' => $majorId,
+                    'status_id' => $statusId,
+                ]);
+            }
+
+            $this->createMissingGrades($enrollment);
+
             return $enrollment;
-        }
-
-        return $this->repository->create([
-            'course_section_id' => $sectionId,
-            'student_id' => $studentId,
-            'major_id' => $majorId,
-            'status_id' => $statusId,
-        ]);
+        });
     }
 
     /**
@@ -90,16 +100,23 @@ class CourseEnrollmentService
             throw new UserFacingException("Student is already enrolled in this course section.");
         }
 
-        return $this->repository->create([
-            'course_section_id' => $sectionId,
-            'student_id' => $studentId,
-            'major_id' => $majorId,
-            'status_id' => $statusId,
-        ]);
+        return DB::transaction(function () use ($sectionId, $studentId, $majorId, $statusId) {
+            $enrollment = $this->repository->create([
+                'course_section_id' => $sectionId,
+                'student_id' => $studentId,
+                'major_id' => $majorId,
+                'status_id' => $statusId,
+            ]);
+
+            $this->createMissingGrades($enrollment);
+
+            return $enrollment;
+        });
     }
 
     /**
-     * Update an enrollment.
+     * Update an enrollment. A student set back to enrolled gets the grades
+     * they are missing.
      */
     public function updateEnrollment(int $id, array $data): CourseEnrollment
     {
@@ -110,7 +127,13 @@ class CourseEnrollmentService
             throw new UserFacingException("Invalid status_id: Status does not exist.");
         }
 
-        return $this->repository->update($enrollment, $data);
+        return DB::transaction(function () use ($enrollment, $data) {
+            $enrollment = $this->repository->update($enrollment, $data);
+
+            $this->createMissingGrades($enrollment);
+
+            return $enrollment;
+        });
     }
 
     /**
@@ -134,5 +157,18 @@ class CourseEnrollmentService
             'final_grade' => $finalGrade,
             'letter_grade' => $letterGrade,
         ]);
+    }
+
+    /**
+     * Give an active enrollment an empty grade for each gradeable item of its
+     * course section that it has none for. A new item only gets grades for the
+     * students enrolled at the time, so a student added or set back to enrolled
+     * later would otherwise have none for the existing items.
+     */
+    protected function createMissingGrades(CourseEnrollment $enrollment): void
+    {
+        if ($enrollment->status_id === 1) { // Only active enrollments
+            $this->gradeRepository->createMissingForEnrollment($enrollment->id);
+        }
     }
 }
