@@ -84,21 +84,29 @@ class GradeService
     }
 
     /**
-     * Bulk update multiple grades at once.
+     * Bulk update multiple grades at once. A grade the student doesn't have yet
+     * is created, as long as the item is in the student's course section.
      *
      * @param array $grades Array of ['enrollmentId' => int, 'gradeableItemId' => int, 'gradeValue' => float]
+     * @throws ValidationException if an item isn't in the student's course section.
      */
     public function bulkUpdateGrades(array $grades): Collection
     {
         return DB::transaction(function () use ($grades) {
             $updatedGrades = collect();
 
-            foreach ($grades as $gradeData) {
-                // Find the grade by enrollmentId and gradeableItemId
-                $grade = $this->repository->findByEnrollmentAndItemOrFail(
+            foreach ($grades as $index => $gradeData) {
+                // Find the grade by enrollmentId and gradeableItemId, or create it
+                $grade = $this->repository->findOrCreateByEnrollmentAndItem(
                     $gradeData['enrollmentId'],
                     $gradeData['gradeableItemId']
                 );
+
+                if (!$grade) {
+                    throw ValidationException::withMessages([
+                        "grades.{$index}.gradeableItemId" => ["This item is not in the student's course section."],
+                    ]);
+                }
 
                 // Update the grade using the existing updateGrade method
                 $updatedGrade = $this->updateGrade($grade->id, $gradeData['gradeValue']);

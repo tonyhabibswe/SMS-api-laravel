@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Grade;
+use App\Models\GradeableItem;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +64,24 @@ class GradeRepository
     }
 
     /**
+     * Find a grade by enrollment ID and gradeable item ID, creating an empty one
+     * if there is none and the item is in the enrollment's course section.
+     * Returns null if the item isn't in the enrollment's course section.
+     */
+    public function findOrCreateByEnrollmentAndItem(int $enrollmentId, int $gradeableItemId): ?Grade
+    {
+        $grade = $this->findByEnrollmentAndItem($enrollmentId, $gradeableItemId);
+
+        if ($grade) {
+            return $grade;
+        }
+
+        $this->createMissingForEnrollment($enrollmentId, $gradeableItemId);
+
+        return $this->findByEnrollmentAndItem($enrollmentId, $gradeableItemId);
+    }
+
+    /**
      * Get all grades for a specific gradeable item.
      */
     public function getByGradeableItem(int $gradeableItemId): Collection
@@ -106,6 +125,36 @@ class GradeRepository
     public function bulkCreate(array $gradesData): bool
     {
         return DB::table('grades')->insert($gradesData);
+    }
+
+    /**
+     * Create an empty grade for each gradeable item of the enrollment's course
+     * section that the enrollment has no grade for, like the ones a new item
+     * gets for every enrolled student. With a gradeable item ID, only for that
+     * item, and only if it is in the enrollment's course section.
+     *
+     * @return int The number of grades created
+     */
+    public function createMissingForEnrollment(int $enrollmentId, ?int $gradeableItemId = null): int
+    {
+        $itemIds = GradeableItem::whereHas('category.courseSection.courseEnrollments', fn($q) => $q->whereKey($enrollmentId))
+            ->whereDoesntHave('grades', fn($q) => $q->where('course_enrollment_id', $enrollmentId))
+            ->when($gradeableItemId !== null, fn($q) => $q->whereKey($gradeableItemId))
+            ->pluck('id');
+
+        $now = now();
+        $gradesData = $itemIds->map(function ($itemId) use ($enrollmentId, $now) {
+            return [
+                'gradeable_item_id' => $itemId,
+                'course_enrollment_id' => $enrollmentId,
+                'grade_value' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        })->toArray();
+
+        // Skips a grade another request created in the meantime (unique on item + enrollment)
+        return DB::table('grades')->insertOrIgnore($gradesData);
     }
 
     /**
