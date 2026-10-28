@@ -99,7 +99,8 @@ class CourseSectionRepository
         return CourseSection::with([
             'course',
             'semester',
-            'courseEnrollments.student'
+            'courseEnrollments.student',
+            'courseEnrollments.major'
         ])->find($courseSectionId);
     }
 }

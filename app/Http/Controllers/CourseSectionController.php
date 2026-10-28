@@ -14,6 +14,7 @@ use App\Http\Requests\ImportStudentsRequest;
 use App\Http\Requests\SessionCreateRequest;
 use App\Http\Requests\StudentCreateRequest;
 use App\Http\Requests\CourseSection\GetGradesTableRequest;
+use App\Http\Requests\CourseSection\PreviewGradesTableRequest;
 use App\Services\CourseSectionService;
 use App\Services\CourseSessionService;
 use App\Services\StudentAttendanceService;
@@ -21,6 +22,7 @@ use App\Services\StudentImportService;
 use App\Services\GradeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
 
 class CourseSectionController extends Controller
 {
@@ -298,6 +300,90 @@ class CourseSectionController extends Controller
             return response()->json($responseDTO->toArray(), 404);
         } catch (\Exception $e) {
             return $this->exceptionResponse($e, 'Failed to retrieve grades table');
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/course-sections/{courseSectionId}/grades/preview",
+     *     summary="Preview the grades table with some grades changed, saving nothing",
+     *     description="Returns the grades table calculated as if the given grades replaced the saved ones. With neededItemId, each row's needed says the lowest grade on that item that reaches the student's passing mark (their major's passing grade for the course and semester, otherwise 60), compared with the curved grade.",
+     *     tags={"Course Sections", "Grades"},
+     *     @OA\Parameter(
+     *         name="courseSectionId",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="grades",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="enrollmentId", type="integer", example=12),
+     *                     @OA\Property(property="gradeableItemId", type="integer", example=3),
+     *                     @OA\Property(property="gradeValue", type="number", nullable=true, example=70)
+     *                 )
+     *             ),
+     *             @OA\Property(property="neededItemId", type="integer", nullable=true, example=3)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Grades preview calculated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="statusCode", type="integer", example=200),
+     *             @OA\Property(property="message", type="string", example="Grades preview calculated successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 description="The same shape as the grades table. Each row also has needed: {status: passing|needed|cannot, value, best}, or null for W, UW and I.",
+     *                 @OA\Property(property="columns", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="rows", type="array", @OA\Items(type="object"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Course section not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="A grade or the item isn't in the course section, or a grade is out of range"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     )
+     * )
+     */
+    public function previewGradesTable(PreviewGradesTableRequest $request, int $courseSectionId): JsonResponse
+    {
+        try {
+            $validated = $request->validated();
+            $gradesTableDTO = $this->gradeService->previewGradesTable(
+                $courseSectionId,
+                $validated['grades'] ?? [],
+                $validated['neededItemId'] ?? null
+            );
+
+            $responseDTO = new SuccessResponseDTO(
+                200,
+                'Grades preview calculated successfully',
+                $gradesTableDTO->toArray()
+            );
+
+            return response()->json($responseDTO->toArray(), 200);
+        } catch (ValidationException $e) {
+            $responseDTO = new ErrorResponseDTO(422, 'Validation error', $e->errors());
+            return response()->json($responseDTO->toArray(), 422);
+        } catch (ModelNotFoundException $e) {
+            $responseDTO = new ErrorResponseDTO(404, 'Course section not found', []);
+            return response()->json($responseDTO->toArray(), 404);
+        } catch (\Exception $e) {
+            return $this->exceptionResponse($e, 'Failed to calculate the grades preview');
         }
     }
 
