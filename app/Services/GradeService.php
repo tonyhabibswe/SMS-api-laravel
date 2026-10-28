@@ -13,6 +13,7 @@ use App\Helpers\LetterGradeHelper;
 use App\Models\Grade;
 use App\Repositories\GradeRepository;
 use App\Repositories\GradeableCategoryRepository;
+use App\Repositories\CoursePassingGradeRepository;
 use App\Repositories\CourseSectionRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -26,18 +27,18 @@ class GradeService
     protected GradeRepository $repository;
     protected GradeableCategoryRepository $categoryRepository;
     protected CourseSectionRepository $courseSectionRepository;
-    protected GradeableCategoryService $gradeableCategoryService;
+    protected CoursePassingGradeRepository $passingGradeRepository;
 
     public function __construct(
         GradeRepository $repository,
         GradeableCategoryRepository $categoryRepository,
         CourseSectionRepository $courseSectionRepository,
-        GradeableCategoryService $gradeableCategoryService
+        CoursePassingGradeRepository $passingGradeRepository
     ) {
         $this->repository = $repository;
         $this->categoryRepository = $categoryRepository;
         $this->courseSectionRepository = $courseSectionRepository;
-        $this->gradeableCategoryService = $gradeableCategoryService;
+        $this->passingGradeRepository = $passingGradeRepository;
     }
 
     /**
@@ -173,30 +174,38 @@ class GradeService
     }
 
     /**
-     * Check if enrollment status requires grade override.
-     */
-    protected function requiresGradeOverride(string $statusName): bool
-    {
-        return in_array(strtolower($statusName), ['withdrawn', 'unofficial_withdrawn', 'incomplete']);
-    }
-
-    /**
-     * Get letter grade based on status name.
-     */
-    protected function getStatusLetterGrade(string $statusName): string
-    {
-        return match (strtolower($statusName)) {
-            'withdrawn' => 'W',
-            'unofficial_withdrawn' => 'UW',
-            'incomplete' => 'I',
-            default => '',
-        };
-    }
-
-    /**
      * Get grades table for course section with all students and calculations.
      */
     public function getGradesTableForCourseSection(int $courseSectionId): GradesTableDTO
+    {
+        return $this->buildGradesTable($courseSectionId);
+    }
+
+    /**
+     * Get the grades table as it would be with some grades changed, saving
+     * nothing. With an item, each row also gives the lowest grade the student
+     * needs on it to reach their passing mark.
+     *
+     * @param int $courseSectionId
+     * @param array $grades Grades to use instead of the saved ones:
+     *        [['enrollmentId' => int, 'gradeableItemId' => int, 'gradeValue' => float|null], ...]
+     *        A null gradeValue means not graded.
+     * @param int|null $neededItemId The item to give the needed grade on.
+     * @return GradesTableDTO
+     * @throws ModelNotFoundException if the course section doesn't exist.
+     * @throws ValidationException if a grade or the item isn't in the course
+     *         section, or a grade is above the item's max points.
+     */
+    public function previewGradesTable(int $courseSectionId, array $grades, ?int $neededItemId = null): GradesTableDTO
+    {
+        return $this->buildGradesTable($courseSectionId, $grades, $neededItemId);
+    }
+
+    /**
+     * Build the grades table from the saved grades, with some replaced for a
+     * preview. GradebookCalculator does every calculation.
+     */
+    protected function buildGradesTable(int $courseSectionId, array $changedGrades = [], ?int $neededItemId = null): GradesTableDTO
     {
         // Retrieve course section with relations
         $courseSection = $this->courseSectionRepository->getCourseSectionWithRelations($courseSectionId);
@@ -207,9 +216,31 @@ class GradeService
 
         // Retrieve categories with items ordered for table
         $categories = $this->categoryRepository->getCategoriesWithItemsByCourseSectionOrderedForTable($courseSectionId);
+        $calculator = new GradebookCalculator($categories, $courseSection->curve_algorithm);
 
-        // Retrieve all grades grouped by enrollment
+        // Each student's grades by item id, in grade id order, with the preview's
+        // changes in place of the saved grades
         $gradesGrouped = $this->repository->getAllGradesForCourseSectionGrouped($courseSectionId);
+        $valuesByEnrollment = [];
+        foreach ($courseSection->courseEnrollments as $enrollment) {
+            $valuesByEnrollment[$enrollment->id] = $gradesGrouped->get($enrollment->id, collect())
+                ->mapWithKeys(fn ($grade) => [
+                    $grade->gradeable_item_id => $grade->grade_value !== null ? (float) $grade->grade_value : null,
+                ])
+                ->all();
+        }
+        $this->applyChangedGrades($valuesByEnrollment, $changedGrades, $calculator);
+
+        if ($neededItemId !== null && !$calculator->hasItem($neededItemId)) {
+            throw ValidationException::withMessages([
+                'neededItemId' => ['This item is not in the course section.'],
+            ]);
+        }
+
+        // Passing grade by major, for this course and semester
+        $passingGrades = $this->passingGradeRepository
+            ->getByCourseAndSemester($courseSection->course_id, $courseSection->semester_id)
+            ->pluck('grade_value', 'major_id');
 
         // Build columns array
         $columns = [];
@@ -269,61 +300,27 @@ class GradeService
         // Build rows array
         $rows = [];
         foreach ($enrollments as $enrollment) {
+            $values = $valuesByEnrollment[$enrollment->id];
+            $calculated = $calculator->studentGrades($values);
+
+            // Item grades, each category's weighted score after its items
             $grades = [];
-            $categoryWeightedScores = [];
-
-            // Get status name for this enrollment
-            $statusName = $enrollment->status?->name ?? 'enrolled';
-            $requiresOverride = $this->requiresGradeOverride($statusName);
-
-            // Get grades for this enrollment
-            $enrollmentGrades = $gradesGrouped->get($enrollment->id, collect());
-
-            // Populate item grades
             foreach ($categories as $category) {
-                $itemGradesForCategory = [];
-
                 foreach ($category->gradeableItems as $item) {
-                    $grade = $enrollmentGrades->firstWhere('gradeable_item_id', $item->id);
-                    $gradeValue = $grade && $grade->grade_value !== null ? (float) $grade->grade_value : null;
-                    $grades["item_{$item->id}"] = $gradeValue;
-
-                    // Store for category calculation
-                    if ($gradeValue !== null) {
-                        $percentage = ($gradeValue / $item->max_points) * 100;
-                        $itemGradesForCategory[] = $percentage;
-                    }
+                    $grades["item_{$item->id}"] = $values[$item->id] ?? null;
                 }
-
-                // Calculate category weighted score
-                $categoryWeightedScore = 0.00;
-                if (!empty($itemGradesForCategory)) {
-                    // Use existing calculation logic
-                    $categoryPercentage = $this->gradeableCategoryService->calculateCategoryGrade($category->id, $enrollment->id);
-                    if ($categoryPercentage !== null) {
-                        $categoryWeightedScore = round(($categoryPercentage * $category->weight_percent / 100), 2);
-                    }
-                }
-
-                $grades["category_{$category->id}"] = $categoryWeightedScore;
-                $categoryWeightedScores[] = $categoryWeightedScore;
+                $grades["category_{$category->id}"] = $calculated['categories'][$category->id];
             }
 
-            // Calculate final grade and letter grade
-            $finalGrade = round(array_sum($categoryWeightedScores), 0);
-            $letterGrade = LetterGradeHelper::calculate($finalGrade);
+            $finalGrade = $calculated['finalGrade'];
+            $letterGrade = $calculated['letterGrade'];
 
-            // Apply status-based overrides
-            if ($requiresOverride) {
-                $statusLetterGrade = $this->getStatusLetterGrade($statusName);
+            // W, UW and I replace the final grade (the curve is applied once the
+            // class average is known)
+            $statusLetter = GradebookCalculator::statusLetter($enrollment->status?->name ?? 'enrolled');
+            if ($statusLetter !== null) {
                 $finalGrade = null;
-                $letterGrade = $statusLetterGrade;
-                $curvedFinalGrade = null;
-                $curvedLetterGrade = $statusLetterGrade;
-            } else {
-                // Initialize curved grades (will be recalculated after class average)
-                $curvedFinalGrade = $finalGrade;
-                $curvedLetterGrade = $letterGrade;
+                $letterGrade = $statusLetter;
             }
 
             // Create row DTO
@@ -335,59 +332,44 @@ class GradeService
                 grades: $grades,
                 finalGrade: $finalGrade,
                 letterGrade: $letterGrade,
-                curvedFinalGrade: $curvedFinalGrade,
-                curvedLetterGrade: $curvedLetterGrade
+                curvedFinalGrade: $finalGrade,
+                curvedLetterGrade: $letterGrade,
+                majorName: $enrollment->major?->label ?? $enrollment->major?->system_name,
+                passingGrade: (float) ($passingGrades[$enrollment->major_id] ?? GradebookCalculator::DEFAULT_PASSING_GRADE)
             );
         }
 
-        // Calculate class average from valid final grades (excluding NULL and 0.00)
-        // Uses arithmetic mean rounded to 2 decimal places
-        $validGrades = array_filter(
-            array_map(fn($row) => $row->finalGrade, $rows),
-            fn($grade) => $grade !== null && $grade > 0
-        );
+        // Class average from the final grades above 0, then the curve it sets
+        $finalGrades = array_map(fn ($row) => $row->finalGrade, $rows);
+        $classAverage = $calculator->classAverage($finalGrades);
+        $curveAdjustment = $calculator->curveAdjustment($classAverage);
 
-        $classAverage = count($validGrades) > 0
-            ? round(array_sum($validGrades) / count($validGrades), 2)
-            : 0.00;
-
-        // Retrieve curve algorithm and calculate curve adjustment
-        $curveAlgorithm = $courseSection->curve_algorithm;
-        $curveAdjustment = 0.0;
-
-        if ($curveAlgorithm === 'AVERAGE_BASED') {
-            // Determine curve adjustment based on class average thresholds
-            if ($classAverage >= 80.00) {
-                $curveAdjustment = 1.0;
-            } elseif ($classAverage >= 75.00) {
-                $curveAdjustment = 2.0;
-            } elseif ($classAverage >= 70.00) {
-                $curveAdjustment = 3.0;
-            } else {
-                $curveAdjustment = 4.0;
+        foreach ($rows as $row) {
+            // Skip status-based overrides (already have NULL grades)
+            if ($row->finalGrade === null) {
+                continue;
             }
 
-            // Apply curve to each row: round final grade to integer, then add adjustment
-            foreach ($rows as $row) {
-                // Skip status-based overrides (already have NULL grades)
+            $row->curvedFinalGrade = $calculator->curvedGrade($row->finalGrade, $curveAdjustment);
+            $row->curvedLetterGrade = LetterGradeHelper::calculate($row->curvedFinalGrade);
+        }
+
+        // The lowest grade each student needs on the item, with everyone else's
+        // final grade as it is
+        if ($neededItemId !== null) {
+            foreach ($rows as $index => $row) {
                 if ($row->finalGrade === null) {
                     continue;
                 }
 
-                $roundedFinalGrade = round($row->finalGrade, 0); // Round to nearest integer
-                $row->curvedFinalGrade = min($roundedFinalGrade + $curveAdjustment, 100.00); // Cap at 100.00
-                $row->curvedLetterGrade = LetterGradeHelper::calculate($row->curvedFinalGrade);
-            }
-        } else {
-            // No curve applied: curvedFinalGrade equals finalGrade
-            foreach ($rows as $row) {
-                // Skip status-based overrides (already set)
-                if ($row->finalGrade === null) {
-                    continue;
-                }
-
-                $row->curvedFinalGrade = $row->finalGrade;
-                $row->curvedLetterGrade = $row->letterGrade;
+                $otherFinalGrades = $finalGrades;
+                unset($otherFinalGrades[$index]);
+                $row->needed = $calculator->neededGrade(
+                    $valuesByEnrollment[$row->enrollmentId],
+                    $neededItemId,
+                    $row->passingGrade,
+                    $otherFinalGrades
+                );
             }
         }
 
@@ -398,11 +380,49 @@ class GradeService
             semesterName: $courseSection->semester->name ?? '',
             totalStudents: count($rows),
             classAverage: $classAverage,
-            curveAlgorithm: $curveAlgorithm,
+            curveAlgorithm: $courseSection->curve_algorithm,
             curveAdjustment: $curveAdjustment,
             columns: $columns,
             rows: $rows
         );
+    }
+
+    /**
+     * Put a preview's grades in place of the saved ones, after checking that
+     * each is for a student and an item of the course section and fits the
+     * item's max points.
+     *
+     * @param array $valuesByEnrollment Grades by item id, by enrollment id.
+     * @param array $changedGrades [['enrollmentId' => int, 'gradeableItemId' => int, 'gradeValue' => float|null], ...]
+     * @param GradebookCalculator $calculator
+     * @throws ValidationException
+     */
+    protected function applyChangedGrades(array &$valuesByEnrollment, array $changedGrades, GradebookCalculator $calculator): void
+    {
+        $errors = [];
+
+        foreach (array_values($changedGrades) as $index => $change) {
+            $enrollmentId = (int) $change['enrollmentId'];
+            $itemId = (int) $change['gradeableItemId'];
+            $gradeValue = $change['gradeValue'] !== null ? (float) $change['gradeValue'] : null;
+            $maxPoints = $calculator->maxPoints($itemId);
+
+            if (!array_key_exists($enrollmentId, $valuesByEnrollment)) {
+                $errors["grades.{$index}.enrollmentId"] = ['This student is not enrolled in the course section.'];
+            } elseif ($maxPoints === null) {
+                $errors["grades.{$index}.gradeableItemId"] = ['This item is not in the course section.'];
+            } elseif ($gradeValue !== null && ($gradeValue < 0 || $gradeValue > $maxPoints)) {
+                $errors["grades.{$index}.gradeValue"] = [
+                    sprintf('Grade value must be between 0 and %.2f (max points for this item).', $maxPoints)
+                ];
+            } else {
+                $valuesByEnrollment[$enrollmentId][$itemId] = $gradeValue;
+            }
+        }
+
+        if (!empty($errors)) {
+            throw ValidationException::withMessages($errors);
+        }
     }
 
     /**

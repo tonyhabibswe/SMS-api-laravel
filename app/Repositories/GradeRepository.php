@@ -128,12 +128,12 @@ class GradeRepository
     }
 
     /**
-     * Get all grades for a course section grouped by enrollment.
+     * Get all grades for a course section grouped by enrollment, in grade id order.
      */
     public function getAllGradesForCourseSectionGrouped(int $courseSectionId): Collection
     {
         return Grade::whereHas('gradeableItem.category', fn($q) => $q->where('course_section_id', $courseSectionId))
-            ->with(['gradeableItem', 'courseEnrollment'])
+            ->orderBy('id')
             ->get()
             ->groupBy('course_enrollment_id');
     }
