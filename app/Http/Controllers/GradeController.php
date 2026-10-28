@@ -50,8 +50,7 @@ class GradeController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Grades retrieved successfully', $grades->map->toArray()->toArray());
             return response()->json($responseDTO->toArray(), 200);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve grades', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve grades');
         }
     }
 
@@ -79,8 +78,7 @@ class GradeController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Grades retrieved successfully', $grades->map->toArray()->toArray());
             return response()->json($responseDTO->toArray(), 200);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve grades', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve grades');
         }
     }
 
@@ -122,14 +120,13 @@ class GradeController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Grade updated successfully', $grade->toArray());
             return response()->json($responseDTO->toArray(), 200);
         } catch (ModelNotFoundException $e) {
-            $responseDTO = new ErrorResponseDTO(404, 'Grade not found', [$e->getMessage()]);
+            $responseDTO = new ErrorResponseDTO(404, 'Grade not found', []);
             return response()->json($responseDTO->toArray(), 404);
         } catch (ValidationException $e) {
             $responseDTO = new ErrorResponseDTO(422, 'Validation error', $e->errors());
             return response()->json($responseDTO->toArray(), 422);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to update grade', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to update grade');
         }
     }
 
@@ -172,8 +169,7 @@ class GradeController extends Controller
             $responseDTO = new ErrorResponseDTO(422, 'Validation error', $e->errors());
             return response()->json($responseDTO->toArray(), 422);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to update grades', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to update grades');
         }
     }
 
@@ -225,8 +221,7 @@ class GradeController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Final grade calculated successfully', $data);
             return response()->json($responseDTO->toArray(), 200);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to calculate final grade', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to calculate final grade');
         }
     }
 }

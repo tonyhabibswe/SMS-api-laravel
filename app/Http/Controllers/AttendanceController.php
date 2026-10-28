@@ -80,8 +80,7 @@ class AttendanceController extends Controller
         try {
             $this->attendanceService->updateBulkAttendanceValues($id, $dto);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO($e->getCode() ?: 400, $e->getMessage(), []);
-            return response()->json($responseDTO, $responseDTO->statusCode);
+            return $this->exceptionResponse($e, 'Failed to update attendances');
         }
 
         $responseDTO = new SuccessResponseDTO(200, 'Attendances updated successfully', []);
@@ -102,8 +101,7 @@ class AttendanceController extends Controller
         try {
             $this->attendanceService->updateAllAttendanceValues($id, $dto);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO($e->getCode() ?: 400, $e->getMessage(), []);
-            return response()->json($responseDTO , $responseDTO->statusCode);
+            return $this->exceptionResponse($e, 'Failed to update attendances');
         }
 
         $responseDTO = new SuccessResponseDTO(200, 'Attendances updated successfully', []);
