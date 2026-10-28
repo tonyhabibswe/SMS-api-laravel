@@ -35,8 +35,10 @@ class BulkGradeUpdateRequest extends FormRequest
                 'integer',
                 'exists:gradeable_items,id'
             ],
+            // null clears the grade (back to not graded)
             'grades.*.gradeValue' => [
-                'required',
+                'present',
+                'nullable',
                 'numeric',
                 'min:0',
                 'decimal:0,2'
@@ -57,7 +59,7 @@ class BulkGradeUpdateRequest extends FormRequest
             'grades.*.enrollmentId.exists' => 'One or more enrollment IDs do not exist.',
             'grades.*.gradeableItemId.required' => 'Gradeable item ID is required for each grade.',
             'grades.*.gradeableItemId.exists' => 'One or more gradeable item IDs do not exist.',
-            'grades.*.gradeValue.required' => 'Grade value is required for each grade.',
+            'grades.*.gradeValue.present' => 'Grade value is required for each grade (null clears it).',
             'grades.*.gradeValue.numeric' => 'Grade value must be a number.',
             'grades.*.gradeValue.min' => 'Grade value must be at least 0.',
         ];
