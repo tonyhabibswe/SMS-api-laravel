@@ -8,6 +8,7 @@ use App\DTOs\SuccessResponseDTO;
 use App\Http\Requests\StudentCourseStatusCreateRequest;
 use App\Http\Requests\StudentCourseStatusUpdateRequest;
 use App\Services\StudentCourseStatusService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 
 class StudentCourseStatusController extends Controller
@@ -51,8 +52,7 @@ class StudentCourseStatusController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Status retrieved successfully', $dto);
             return response()->json($responseDTO, 200);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, $e->getMessage(), []);
-            return response()->json($responseDTO, 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve status');
         }
     }
 
@@ -73,8 +73,7 @@ class StudentCourseStatusController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Status retrieved successfully', $dto);
             return response()->json($responseDTO, 200);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, $e->getMessage(), []);
-            return response()->json($responseDTO, 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve status');
         }
     }
 
@@ -90,8 +89,7 @@ class StudentCourseStatusController extends Controller
             $responseDTO = new SuccessResponseDTO(201, 'Status created successfully', $dto);
             return response()->json($responseDTO, 201);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(400, $e->getMessage(), []);
-            return response()->json($responseDTO, 400);
+            return $this->exceptionResponse($e, 'Failed to create status');
         }
     }
 
@@ -106,9 +104,11 @@ class StudentCourseStatusController extends Controller
             $dto = StudentCourseStatusDTO::fromModel($status);
             $responseDTO = new SuccessResponseDTO(200, 'Status updated successfully', $dto);
             return response()->json($responseDTO, 200);
-        } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(404, $e->getMessage(), []);
+        } catch (ModelNotFoundException $e) {
+            $responseDTO = new ErrorResponseDTO(404, 'Status not found', []);
             return response()->json($responseDTO, 404);
+        } catch (\Exception $e) {
+            return $this->exceptionResponse($e, 'Failed to update status');
         }
     }
 
@@ -122,9 +122,11 @@ class StudentCourseStatusController extends Controller
 
             $responseDTO = new SuccessResponseDTO(200, 'Status deleted successfully', []);
             return response()->json($responseDTO, 200);
+        } catch (ModelNotFoundException $e) {
+            $responseDTO = new ErrorResponseDTO(404, 'Status not found', []);
+            return response()->json($responseDTO, 404);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(400, $e->getMessage(), []);
-            return response()->json($responseDTO, 400);
+            return $this->exceptionResponse($e, 'Failed to delete status');
         }
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Repositories;
 
 use App\DTOs\CourseSection\CourseSectionEditDTO;
-use App\Models\Attendance;
 use App\Models\CourseSection;
 use Illuminate\Support\Collection;
 
@@ -90,21 +89,6 @@ class CourseSectionRepository
         }
         $courseSection->delete();
         return true;
-    }
-
-    /**
-     * Retrieve distinct student IDs for attendance records that belong to a given course section.
-     *
-     * @param int $courseSectionId
-     * @return \Illuminate\Support\Collection
-     */
-    public function getDistinctStudentIdsByCourseSection(int $courseSectionId)
-    {
-        return Attendance::whereHas('courseSession', function ($query) use ($courseSectionId) {
-            $query->where('course_section_id', $courseSectionId);
-        })
-            ->distinct()
-            ->pluck('student_id');
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\DTOs\Holiday\HolidayCreateDTO;
+use App\Exceptions\UserFacingException;
 use App\Repositories\CourseSessionRepository;
 use App\Repositories\HolidayRepository;
 use Exception;
@@ -37,14 +38,14 @@ class HolidayService
      * @param int $holidayId
      * @param string $name
      * @return \App\Models\Holiday
-     * @throws Exception if the holiday is not found.
+     * @throws UserFacingException if the holiday is not found.
      */
     public function updateHolidayName(int $holidayId, ?string $name)
     {
         $holiday = $this->holidayRepository->updateHolidayName($holidayId, $name);
 
         if (!$holiday) {
-            throw new Exception("Holiday not found", 404);
+            throw new UserFacingException("Holiday not found", 404);
         }
 
         return $holiday;

@@ -8,7 +8,7 @@ use App\Repositories\CourseSessionRepository;
 use App\Repositories\AttendanceRepository;
 use App\Services\StudentMajorHistoryService;
 use App\Services\CourseEnrollmentService;
-use Exception;
+use App\Exceptions\UserFacingException;
 use Illuminate\Support\Facades\DB;
 
 class StudentImportService
@@ -38,13 +38,13 @@ class StudentImportService
      *
      * @param \Illuminate\Http\UploadedFile $file
      * @param int $courseSectionId
-     * @throws Exception
+     * @throws UserFacingException
      */
     public function importStudents($file, int $courseSectionId): void
     {
         $handle = fopen($file->getRealPath(), 'r');
         if ($handle === false) {
-            throw new Exception('Unable to open the file.', 500);
+            throw new UserFacingException('Unable to open the file.', 500);
         }
 
         // Skip the first 4 lines (header or irrelevant)
@@ -72,14 +72,14 @@ class StudentImportService
         fclose($handle);
 
         if (empty($csvStudents)) {
-            throw new Exception('No student records found in CSV.', 400);
+            throw new UserFacingException('No student records found in CSV.', 400);
         }
 
         DB::transaction(function () use ($csvStudents, $courseSectionId) {
             // Get course section to find semester
             $courseSection = \App\Models\CourseSection::find($courseSectionId);
             if (!$courseSection) {
-                throw new Exception("Course section not found", 404);
+                throw new UserFacingException("Course section not found", 404);
             }
 
             // Extract unique student_ids from DTOs.
@@ -139,7 +139,7 @@ class StudentImportService
             // Retrieve sessions for the given course section.
             $sessions = $this->courseSessionRepository->getSessionsByCourseSectionId($courseSectionId);
             if ($sessions->isEmpty()) {
-                throw new Exception("This course section doesn't have any session created", 400);
+                throw new UserFacingException("This course section doesn't have any session created", 400);
             }
 
             // For each student, create enrollment and check if attendance exists for the first session.

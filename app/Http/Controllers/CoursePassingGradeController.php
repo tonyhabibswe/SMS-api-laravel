@@ -53,8 +53,7 @@ class CoursePassingGradeController extends Controller
 
             return response()->json($responseDTO->toArray(), 200);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve course passing grades', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve course passing grades');
         }
     }
 
@@ -99,8 +98,7 @@ class CoursePassingGradeController extends Controller
             $responseDTO = new ErrorResponseDTO(422, 'Validation failed', $e->errors());
             return response()->json($responseDTO->toArray(), 422);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to create course passing grade', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to create course passing grade');
         }
     }
 
@@ -158,8 +156,7 @@ class CoursePassingGradeController extends Controller
             $responseDTO = new ErrorResponseDTO(422, 'Validation failed', $e->errors());
             return response()->json($responseDTO->toArray(), 422);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to update course passing grade', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to update course passing grade');
         }
     }
 
@@ -205,8 +202,7 @@ class CoursePassingGradeController extends Controller
             $responseDTO = new ErrorResponseDTO(404, 'Course passing grade not found', []);
             return response()->json($responseDTO->toArray(), 404);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to delete course passing grade', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to delete course passing grade');
         }
     }
 
@@ -221,8 +217,7 @@ class CoursePassingGradeController extends Controller
 
             return response()->json($responseDTO->toArray(), 200);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve course passing grades', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve course passing grades');
         }
     }
 }

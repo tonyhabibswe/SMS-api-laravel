@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\DTOs\ErrorResponseDTO;
 use App\DTOs\Holiday\HolidayCreateDTO;
 use App\DTOs\SuccessResponseDTO;
 use App\Http\Requests\HolidayCreateRequest;
@@ -49,8 +48,7 @@ class HolidayController extends Controller
         try {
             $result = $this->holidayService->createHoliday($id, $dto);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO($e->getCode() ?: 400, $e->getMessage(), []);
-            return response()->json($responseDTO, $responseDTO->statusCode);
+            return $this->exceptionResponse($e, 'Failed to create holiday');
         }
 
         $responseDTO = new SuccessResponseDTO(201, 'Holiday created successfully', $result);
@@ -71,8 +69,7 @@ class HolidayController extends Controller
         try {
             $holiday = $this->holidayService->updateHolidayName($id, $request->name);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO($e->getCode() ?: 400, $e->getMessage(), []);
-            return response()->json($responseDTO, $responseDTO->statusCode);
+            return $this->exceptionResponse($e, 'Failed to update holiday');
         }
 
         $successResponse = new SuccessResponseDTO(200, 'Holiday updated successfully', $holiday);   

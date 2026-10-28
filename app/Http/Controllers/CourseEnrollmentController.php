@@ -8,6 +8,7 @@ use App\DTOs\CourseEnrollment\CourseEnrollmentStudentDTO;
 use App\DTOs\ErrorResponseDTO;
 use App\DTOs\SuccessResponseDTO;
 use App\Services\CourseEnrollmentService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -95,8 +96,7 @@ class CourseEnrollmentController extends Controller
             $responseDTO = new ErrorResponseDTO(422, 'Validation failed', $e->errors());
             return response()->json($responseDTO, 422);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(400, $e->getMessage(), []);
-            return response()->json($responseDTO, 400);
+            return $this->exceptionResponse($e, 'Failed to create enrollment');
         }
     }
 
@@ -123,9 +123,11 @@ class CourseEnrollmentController extends Controller
         } catch (ValidationException $e) {
             $responseDTO = new ErrorResponseDTO(422, 'Validation failed', $e->errors());
             return response()->json($responseDTO, 422);
-        } catch (\Exception $e) {
+        } catch (ModelNotFoundException $e) {
             $responseDTO = new ErrorResponseDTO(404, 'Enrollment not found', []);
             return response()->json($responseDTO, 404);
+        } catch (\Exception $e) {
+            return $this->exceptionResponse($e, 'Failed to update grades');
         }
     }
 
@@ -149,9 +151,11 @@ class CourseEnrollmentController extends Controller
         } catch (ValidationException $e) {
             $responseDTO = new ErrorResponseDTO(422, 'Validation failed', $e->errors());
             return response()->json($responseDTO, 422);
-        } catch (\Exception $e) {
+        } catch (ModelNotFoundException $e) {
             $responseDTO = new ErrorResponseDTO(404, 'Enrollment not found', []);
             return response()->json($responseDTO, 404);
+        } catch (\Exception $e) {
+            return $this->exceptionResponse($e, 'Failed to update status');
         }
     }
 
@@ -165,9 +169,11 @@ class CourseEnrollmentController extends Controller
 
             $responseDTO = new SuccessResponseDTO(200, 'Enrollment deleted successfully', []);
             return response()->json($responseDTO, 200);
-        } catch (\Exception $e) {
+        } catch (ModelNotFoundException $e) {
             $responseDTO = new ErrorResponseDTO(404, 'Enrollment not found', []);
             return response()->json($responseDTO, 404);
+        } catch (\Exception $e) {
+            return $this->exceptionResponse($e, 'Failed to delete enrollment');
         }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\UserFacingException;
 use App\Repositories\StudentCourseStatusRepository;
 use App\Models\StudentCourseStatus;
 use Illuminate\Support\Collection;
@@ -46,7 +47,7 @@ class StudentCourseStatusService
     {
         // Validate unique name
         if ($this->repository->findByName($data['name'])) {
-            throw new \Exception("Status with this name already exists.");
+            throw new UserFacingException("Status with this name already exists.");
         }
 
         return $this->repository->create($data);
@@ -62,7 +63,7 @@ class StudentCourseStatusService
         // Validate unique name if changing
         if (isset($data['name']) && $data['name'] !== $status->name) {
             if ($this->repository->findByName($data['name'])) {
-                throw new \Exception("Status with this name already exists.");
+                throw new UserFacingException("Status with this name already exists.");
             }
         }
 
