@@ -59,16 +59,17 @@ class GradeService
     }
 
     /**
-     * Update a single grade value with validation.
+     * Update a single grade value with validation. null clears the grade, which
+     * then counts as not graded, like a grade that was never entered.
      */
-    public function updateGrade(int $id, float $gradeValue): GradeDetailDTO
+    public function updateGrade(int $id, ?float $gradeValue): GradeDetailDTO
     {
         $grade = $this->repository->findByIdOrFail($id);
 
         // Validate grade_value is within 0 to max_points
         $maxPoints = $grade->gradeableItem->max_points;
 
-        if ($gradeValue < 0 || $gradeValue > $maxPoints) {
+        if ($gradeValue !== null && ($gradeValue < 0 || $gradeValue > $maxPoints)) {
             throw ValidationException::withMessages([
                 'gradeValue' => [
                     sprintf('Grade value must be between 0 and %.2f (max points for this item).', $maxPoints)
