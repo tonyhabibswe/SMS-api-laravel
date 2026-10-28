@@ -17,7 +17,8 @@ class SessionCreateRequest extends FormRequest
         return [
             'sessionStart' => 'required|date',
             'sessionEnd'   => 'required|date|after:sessionStart',
-            'room'          => 'required|string',
+            // Same limit as a course section's room
+            'room'          => 'required|string|max:100',
         ];
     }
 }
