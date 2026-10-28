@@ -8,21 +8,16 @@ use App\DTOs\GradeableCategory\GradeableCategoryListDTO;
 use App\DTOs\GradeableCategory\GradeableCategoryDetailDTO;
 use App\Models\GradeableCategory;
 use App\Repositories\GradeableCategoryRepository;
-use App\Repositories\GradeRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 class GradeableCategoryService
 {
     protected GradeableCategoryRepository $repository;
-    protected GradeRepository $gradeRepository;
 
-    public function __construct(
-        GradeableCategoryRepository $repository,
-        GradeRepository $gradeRepository
-    ) {
+    public function __construct(GradeableCategoryRepository $repository)
+    {
         $this->repository = $repository;
-        $this->gradeRepository = $gradeRepository;
     }
 
     /**
@@ -128,54 +123,5 @@ class GradeableCategoryService
     public function deleteCategory(int $id): void
     {
         $this->repository->delete($id);
-    }
-
-    /**
-     * Calculate category grade for a specific enrollment using the category's algorithm.
-     */
-    public function calculateCategoryGrade(int $categoryId, int $enrollmentId): ?float
-    {
-        $category = $this->repository->findByIdOrFail($categoryId);
-
-        // Get all grades for this category's items for this enrollment
-        $allGrades = $this->gradeRepository->getByEnrollment($enrollmentId)
-            ->filter(fn($grade) => $grade->gradeableItem->category_id === $categoryId);
-
-        if ($allGrades->isEmpty()) {
-            return null;
-        }
-
-        // Calculate based on algorithm
-        if ($category->algorithm === 'AVERAGE') {
-            // Calculate weighted average based on max_points
-            // Treat null grades as 0
-            $totalPoints = 0;
-            $maxPoints = 0;
-
-            foreach ($allGrades as $grade) {
-                $totalPoints += $grade->grade_value ?? 0;
-                $maxPoints += $grade->gradeableItem->max_points;
-            }
-
-            return $maxPoints > 0 ? round(($totalPoints / $maxPoints) * 100, 2) : null;
-        }
-
-        if ($category->algorithm === 'PICK_HIGHEST') {
-            // Pick the highest percentage, filter out null values
-            $grades = $allGrades->filter(fn($grade) => $grade->grade_value !== null);
-            
-            if ($grades->isEmpty()) {
-                return null;
-            }
-            
-            $percentages = $grades->map(function ($grade) {
-                $maxPoints = $grade->gradeableItem->max_points;
-                return $maxPoints > 0 ? ($grade->grade_value / $maxPoints) * 100 : 0;
-            });
-
-            return round($percentages->max(), 2);
-        }
-
-        return null;
     }
 }
