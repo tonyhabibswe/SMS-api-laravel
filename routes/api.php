@@ -6,6 +6,7 @@ use App\Http\Controllers\CourseEnrollmentController;
 use App\Http\Controllers\StudentCourseStatusController;
 use App\Http\Controllers\MajorController;
 use App\Http\Controllers\StudentMajorHistoryController;
+use App\Http\Controllers\StudentController;
 use App\Http\Controllers\GradeableCategoryController;
 use App\Http\Controllers\GradeableItemController;
 use App\Http\Controllers\GradeController;
@@ -72,6 +73,10 @@ Route::get('majors', [MajorController::class, 'list'])->middleware('auth:api');
 Route::get('majors/with-student-count', [MajorController::class, 'listWithStudentCount'])->middleware('auth:api');
 Route::put('major/{id}/label', [MajorController::class, 'updateLabel'])->where('id', '[0-9]+')->middleware('auth:api');
 Route::get('major/system-name/{systemName}', [MajorController::class, 'findBySystemName'])->middleware('auth:api');
+
+//Student routes
+Route::get('students', [StudentController::class, 'list'])->middleware('auth:api');
+Route::get('student/{id}', [StudentController::class, 'show'])->where('id', '[0-9]+')->middleware('auth:api');
 
 //Student Major History routes
 Route::get('student/{id}/major-history', [StudentMajorHistoryController::class, 'getStudentHistory'])->where('id', '[0-9]+')->middleware('auth:api');
