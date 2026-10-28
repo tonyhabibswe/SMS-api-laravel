@@ -2,6 +2,8 @@
 
 namespace App\DTOs\CourseSection;
 
+use App\Services\GradebookCalculator;
+
 class GradesTableRowDTO
 {
     public function __construct(
@@ -13,7 +15,10 @@ class GradesTableRowDTO
         public ?float $finalGrade,
         public ?string $letterGrade,
         public ?float $curvedFinalGrade,
-        public ?string $curvedLetterGrade
+        public ?string $curvedLetterGrade,
+        public ?string $majorName = null, // The major the student enrolled under
+        public float $passingGrade = GradebookCalculator::DEFAULT_PASSING_GRADE,
+        public ?array $needed = null // Preview only: GradebookCalculator::neededGrade() for the chosen item
     ) {}
 
     public function toArray(): array
@@ -28,6 +33,9 @@ class GradesTableRowDTO
             'letterGrade' => $this->letterGrade,
             'curvedFinalGrade' => $this->curvedFinalGrade,
             'curvedLetterGrade' => $this->curvedLetterGrade,
+            'majorName' => $this->majorName,
+            'passingGrade' => $this->passingGrade,
+            'needed' => $this->needed,
         ]);
     }
 }

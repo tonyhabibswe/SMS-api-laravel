@@ -108,6 +108,16 @@ class CoursePassingGradeRepository
     }
 
     /**
+     * Get the passing grades set for a course in a semester, one per major.
+     */
+    public function getByCourseAndSemester(int $courseId, int $semesterId): Collection
+    {
+        return CoursePassingGrade::where('course_id', $courseId)
+            ->where('semester_id', $semesterId)
+            ->get();
+    }
+
+    /**
      * Check if a course passing grade exists for the given combination.
      */
     public function existsByMajorSemesterCourse(int $majorId, int $semesterId, int $courseId, ?int $excludeId = null): bool
