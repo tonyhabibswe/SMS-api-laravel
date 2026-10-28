@@ -66,7 +66,8 @@ class CourseSectionRepository
 
         $courseSection->section_code = $dto->sectionCode;
         
-        if ($dto->curveAlgorithm !== null) {
+        // Not sent keeps the curve; sent as null removes it
+        if ($dto->curveAlgorithmSent) {
             $courseSection->curve_algorithm = $dto->curveAlgorithm;
         }
         
