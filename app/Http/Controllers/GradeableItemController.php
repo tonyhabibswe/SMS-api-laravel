@@ -46,8 +46,7 @@ class GradeableItemController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Gradeable items retrieved successfully', $items->map->toArray()->toArray());
             return response()->json($responseDTO->toArray(), 200);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve gradeable items', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve gradeable items');
         }
     }
 
@@ -75,8 +74,7 @@ class GradeableItemController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Items retrieved successfully', $items->map->toArray()->toArray());
             return response()->json($responseDTO->toArray(), 200);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve items', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve items');
         }
     }
 
@@ -104,8 +102,7 @@ class GradeableItemController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Items retrieved successfully', $items->map->toArray()->toArray());
             return response()->json($responseDTO->toArray(), 200);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve items', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve items');
         }
     }
 
@@ -137,11 +134,10 @@ class GradeableItemController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Item retrieved successfully', $item->toArray());
             return response()->json($responseDTO->toArray(), 200);
         } catch (ModelNotFoundException $e) {
-            $responseDTO = new ErrorResponseDTO(404, 'Item not found', [$e->getMessage()]);
+            $responseDTO = new ErrorResponseDTO(404, 'Item not found', []);
             return response()->json($responseDTO->toArray(), 404);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve item', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve item');
         }
     }
 
@@ -179,8 +175,7 @@ class GradeableItemController extends Controller
             $responseDTO = new ErrorResponseDTO(422, 'Validation error', $e->errors());
             return response()->json($responseDTO->toArray(), 422);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to create item', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to create item');
         }
     }
 
@@ -224,14 +219,13 @@ class GradeableItemController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Item updated successfully', $item->toArray());
             return response()->json($responseDTO->toArray(), 200);
         } catch (ModelNotFoundException $e) {
-            $responseDTO = new ErrorResponseDTO(404, 'Item not found', [$e->getMessage()]);
+            $responseDTO = new ErrorResponseDTO(404, 'Item not found', []);
             return response()->json($responseDTO->toArray(), 404);
         } catch (ValidationException $e) {
             $responseDTO = new ErrorResponseDTO(422, 'Validation error', $e->errors());
             return response()->json($responseDTO->toArray(), 422);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to update item', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to update item');
         }
     }
 
@@ -263,11 +257,10 @@ class GradeableItemController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Item deleted successfully. All associated grades have been removed.', null);
             return response()->json($responseDTO->toArray(), 200);
         } catch (ModelNotFoundException $e) {
-            $responseDTO = new ErrorResponseDTO(404, 'Item not found', [$e->getMessage()]);
+            $responseDTO = new ErrorResponseDTO(404, 'Item not found', []);
             return response()->json($responseDTO->toArray(), 404);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to delete item', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to delete item');
         }
     }
 }

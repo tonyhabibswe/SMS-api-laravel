@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\UserFacingException;
 use App\Repositories\CourseEnrollmentRepository;
 use App\Repositories\StudentCourseStatusRepository;
 use App\Models\CourseEnrollment;
@@ -79,14 +80,14 @@ class CourseEnrollmentService
     {
         // Validate status exists
         if (!$this->statusRepository->findById($statusId)) {
-            throw new \Exception("Invalid status_id: Status does not exist.");
+            throw new UserFacingException("Invalid status_id: Status does not exist.");
         }
 
         // Check if enrollment already exists
         $existing = $this->repository->findByStudentAndSection($sectionId, $studentId);
 
         if ($existing) {
-            throw new \Exception("Student is already enrolled in this course section.");
+            throw new UserFacingException("Student is already enrolled in this course section.");
         }
 
         return $this->repository->create([
@@ -106,7 +107,7 @@ class CourseEnrollmentService
 
         // Validate status_id if provided
         if (isset($data['status_id']) && !$this->statusRepository->findById($data['status_id'])) {
-            throw new \Exception("Invalid status_id: Status does not exist.");
+            throw new UserFacingException("Invalid status_id: Status does not exist.");
         }
 
         return $this->repository->update($enrollment, $data);

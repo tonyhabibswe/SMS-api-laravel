@@ -10,7 +10,7 @@ use App\Exports\AttendanceExport;
 use App\Models\CourseSession;
 use App\Repositories\AttendanceRepository;
 use App\Repositories\CourseSectionRepository;
-use Exception;
+use App\Exceptions\UserFacingException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Excel;
@@ -63,14 +63,14 @@ class AttendanceService
      * @param int $sessionId
      * @param AttendanceUpdateValuesDTO $dto
      * @return void
-     * @throws Exception
+     * @throws UserFacingException
      */
     public function updateBulkAttendanceValues(int $sessionId, AttendanceUpdateBulkDTO $dto): void
     {
         // Verify that the session exists.
         $session = CourseSession::find($sessionId);
         if (!$session) {
-            throw new Exception("Session not found", 404);
+            throw new UserFacingException("Session not found", 404);
         }
 
         DB::transaction(function () use ($sessionId, $dto) {
@@ -79,7 +79,7 @@ class AttendanceService
 
             // If no attendances are found in the provided IDs, throw an exception.
             if ($attendancesToUpdate->isEmpty()) {
-                throw new Exception("Attendances not found", 404);
+                throw new UserFacingException("Attendances not found", 404);
             }
 
             // Update these attendances with the provided attendance value.
@@ -98,7 +98,7 @@ class AttendanceService
      *
      * @param int $sessionId
      * @param AttendanceUpdateValueDTO $dto
-     * @throws Exception if the session or attendances are not found.
+     * @throws UserFacingException if the session or attendances are not found.
      * @return void
      */
     public function updateAllAttendanceValues(int $sessionId, AttendanceUpdateDTO $dto): void
@@ -106,7 +106,7 @@ class AttendanceService
         // Verify that the session exists.
         $session = \App\Models\CourseSession::find($sessionId);
         if (!$session) {
-            throw new Exception("Session not found", 404);
+            throw new UserFacingException("Session not found", 404);
         }
 
         DB::transaction(function () use ($sessionId, $dto) {
@@ -114,13 +114,13 @@ class AttendanceService
             $attendances = $this->attendanceRepository->getAttendancesBySessionId($sessionId);
 
             if ($attendances->isEmpty()) {
-                throw new Exception("Attendances not found", 404);
+                throw new UserFacingException("Attendances not found", 404);
             }
 
             // Update all attendance records with the provided value.
              $updatedCount = $this->attendanceRepository->updateAllAttendancesBySession($sessionId, $dto->attendance);
             if ($updatedCount === 0) {
-                throw new Exception("No attendance records were updated", 404);
+                throw new UserFacingException("No attendance records were updated", 404);
             }
         });
     }
@@ -129,14 +129,14 @@ class AttendanceService
      * Export all the attendance excel sheet.
      *
      * @param int $courseSectionId
-     * @throws Exception if the course section is not found.
+     * @throws UserFacingException if the course section is not found.
      * @return string 
      */
     public function exportAttendance(int $courseSectionId) {
 
         $courseSection = $this->courseSectionRepository->findCourseBySectionId($courseSectionId);
         if (!$courseSection) {
-            throw new Exception("Course section not found", 404);
+            throw new UserFacingException("Course section not found", 404);
         }
 
         $fileName = $courseSection->course->code . '_' . $courseSection->section_code . '_attendance.xlsx';
