@@ -91,7 +91,8 @@ class CourseSectionController extends Controller
         $editDTO = new CourseSectionEditDTO(
             $id,
             $request->sectionCode,
-            $request->curveAlgorithm
+            $request->curveAlgorithm,
+            $request->has('curveAlgorithm')
         );
 
         // Call the service layer to update the course section.
