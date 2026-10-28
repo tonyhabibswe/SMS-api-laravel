@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\DTOs\CourseSection\GradesTableDTO;
+use Maatwebsite\Excel\Concerns\Export;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -14,7 +15,8 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
-class GradesTableExport implements WithMultipleSheets
+// Laravel Excel 4 only exports classes implementing Export, which WithMultipleSheets does not extend
+class GradesTableExport implements Export, WithMultipleSheets
 {
     protected GradesTableDTO $gradesTableDTO;
     protected int $courseSectionId;
