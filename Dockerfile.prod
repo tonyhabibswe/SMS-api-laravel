@@ -1,5 +1,5 @@
 # Stage 1: Build & Install Dependencies
-FROM php:8.2-fpm-alpine as builder
+FROM php:8.5.12-fpm-alpine as builder
 
 # Install system dependencies and libraries for required PHP extensions
 RUN apk update && apk add --no-cache \
@@ -39,12 +39,20 @@ COPY . .
 # Install PHP dependencies without dev packages, optimized for production
 RUN composer install --no-dev --prefer-dist --optimize-autoloader
 
+# Keep a copy of the dependencies outside /var/www, stamped with the composer.lock
+# they came from. entrypoint.sh uses it to refresh the vendor volume, which Docker
+# only fills from the image when the volume is first created.
+RUN sha1sum composer.lock > vendor/.composer-lock.sha1 && cp -a vendor /opt/vendor
+
 # Ensure storage and cache directories are writable
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 # Override the default PHP-FPM listening address in www.conf
 RUN sed -i 's/listen = 127.0.0.1:9000/listen = 0.0.0.0:9000/g' /usr/local/etc/php-fpm.d/www.conf
 
+# Use PHP's production php.ini (the image ships none). Among other things this
+# turns off register_argc_argv, which Laravel's CVE-2024-52301 relies on.
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 # Run entrypoint.sh
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
