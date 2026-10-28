@@ -46,8 +46,7 @@ class GradeableCategoryController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Gradeable categories retrieved successfully', $categories->map->toArray()->toArray());
             return response()->json($responseDTO->toArray(), 200);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve gradeable categories', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve gradeable categories');
         }
     }
 
@@ -75,8 +74,7 @@ class GradeableCategoryController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Categories retrieved successfully', $categories->map->toArray()->toArray());
             return response()->json($responseDTO->toArray(), 200);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve categories', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve categories');
         }
     }
 
@@ -108,11 +106,10 @@ class GradeableCategoryController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Category retrieved successfully', $category->toArray());
             return response()->json($responseDTO->toArray(), 200);
         } catch (ModelNotFoundException $e) {
-            $responseDTO = new ErrorResponseDTO(404, 'Category not found', [$e->getMessage()]);
+            $responseDTO = new ErrorResponseDTO(404, 'Category not found', []);
             return response()->json($responseDTO->toArray(), 404);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve category', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve category');
         }
     }
 
@@ -151,8 +148,7 @@ class GradeableCategoryController extends Controller
             $responseDTO = new ErrorResponseDTO(422, 'Validation error', $e->errors());
             return response()->json($responseDTO->toArray(), 422);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to create category', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to create category');
         }
     }
 
@@ -197,14 +193,13 @@ class GradeableCategoryController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Category updated successfully', $category->toArray());
             return response()->json($responseDTO->toArray(), 200);
         } catch (ModelNotFoundException $e) {
-            $responseDTO = new ErrorResponseDTO(404, 'Category not found', [$e->getMessage()]);
+            $responseDTO = new ErrorResponseDTO(404, 'Category not found', []);
             return response()->json($responseDTO->toArray(), 404);
         } catch (ValidationException $e) {
             $responseDTO = new ErrorResponseDTO(422, 'Validation error', $e->errors());
             return response()->json($responseDTO->toArray(), 422);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to update category', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to update category');
         }
     }
 
@@ -236,11 +231,10 @@ class GradeableCategoryController extends Controller
             $responseDTO = new SuccessResponseDTO(200, 'Category deleted successfully. All associated items and grades have been removed.', null);
             return response()->json($responseDTO->toArray(), 200);
         } catch (ModelNotFoundException $e) {
-            $responseDTO = new ErrorResponseDTO(404, 'Category not found', [$e->getMessage()]);
+            $responseDTO = new ErrorResponseDTO(404, 'Category not found', []);
             return response()->json($responseDTO->toArray(), 404);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to delete category', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to delete category');
         }
     }
 }

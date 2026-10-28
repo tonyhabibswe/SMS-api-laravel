@@ -5,6 +5,7 @@ namespace App\Services;
 use App\DTOs\CourseSection\CourseSectionCreateDTO;
 use App\DTOs\CourseSection\CourseSectionEditDTO;
 use App\DTOs\CourseSection\CourseSectionListDTO;
+use App\Exceptions\UserFacingException;
 use App\Models\Course;
 use App\Models\CourseSession;
 use App\Models\Semester;
@@ -40,20 +41,20 @@ class CourseSectionService
      *
      * @param CourseSectionCreateDTO $dto
      * @return \App\Models\CourseSection
-     * @throws \Exception if related Semester or Course is not found.
+     * @throws UserFacingException if related Semester or Course is not found.
      */
     public function createCourseSection(CourseSectionCreateDTO $dto)
     {
         // Retrieve the Semester (with holidays) by ID.
         $semester = Semester::with('holidays')->find($dto->semesterId);
         if (!$semester) {
-            throw new \Exception("Semester not found", 404);
+            throw new UserFacingException("Semester not found", 404);
         }
 
         // Retrieve the Course by ID.
         $course = Course::find($dto->courseId);
         if (!$course) {
-            throw new \Exception("Course not found", 404);
+            throw new UserFacingException("Course not found", 404);
         }
 
         // Prepare an array of holiday dates.

@@ -70,8 +70,7 @@ class CourseSectionController extends Controller
         try {
             $courseSection = $this->courseSectionService->createCourseSection($dto);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(400, $e->getMessage(), []);
-            return response()->json($responseDTO, 400);
+            return $this->exceptionResponse($e, 'Failed to create course section');
         }
         $responseDTO = new SuccessResponseDTO(201, 'Course section created successfully', $courseSection);
         return response()->json($responseDTO, 201);
@@ -152,8 +151,7 @@ class CourseSectionController extends Controller
         try {
             $student = $this->studentAttendanceService->createStudentWithAttendances($dto, $id);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(400, $e->getMessage(), []);
-            return response()->json($responseDTO, 400);
+            return $this->exceptionResponse($e, 'Failed to create student');
         }
 
         $responseDTO = new SuccessResponseDTO(201, 'Student created successfully', $student);
@@ -175,8 +173,7 @@ class CourseSectionController extends Controller
         try {
             $this->studentImportService->importStudents($request->file('file'), $id);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(400, $e->getMessage(), []);
-            return response()->json($responseDTO, 400);
+            return $this->exceptionResponse($e, 'Failed to import students');
         }
 
         $responseDTO = new SuccessResponseDTO(200, 'Students imported and attendance records created successfully', []);
@@ -205,9 +202,11 @@ class CourseSectionController extends Controller
 
         try {
             $session = $this->courseSessionService->createSessionForCourseSection($dto, $id);
+        } catch (ModelNotFoundException $e) {
+            $responseDTO = new ErrorResponseDTO(404, 'Course section not found', []);
+            return response()->json($responseDTO, 404);
         } catch (\Exception $e) {
-            $reponseDTO = new ErrorResponseDTO(400, $e->getMessage(), []);
-            return response()->json($reponseDTO, 400);
+            return $this->exceptionResponse($e, 'Failed to create session');
         }
 
         $responseDTO = new SuccessResponseDTO(201, 'Session created successfully', $session);
@@ -295,11 +294,10 @@ class CourseSectionController extends Controller
 
             return response()->json($responseDTO->toArray(), 200);
         } catch (ModelNotFoundException $e) {
-            $responseDTO = new ErrorResponseDTO(404, 'Course section not found', [$e->getMessage()]);
+            $responseDTO = new ErrorResponseDTO(404, 'Course section not found', []);
             return response()->json($responseDTO->toArray(), 404);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to retrieve grades table', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to retrieve grades table');
         }
     }
 
@@ -351,11 +349,10 @@ class CourseSectionController extends Controller
 
             return response()->json($responseDTO->toArray(), 200);
         } catch (ModelNotFoundException $e) {
-            $responseDTO = new ErrorResponseDTO(404, 'Course section not found', [$e->getMessage()]);
+            $responseDTO = new ErrorResponseDTO(404, 'Course section not found', []);
             return response()->json($responseDTO->toArray(), 404);
         } catch (\Exception $e) {
-            $responseDTO = new ErrorResponseDTO(500, 'Failed to export grades and attendance', [$e->getMessage()]);
-            return response()->json($responseDTO->toArray(), 500);
+            return $this->exceptionResponse($e, 'Failed to export grades and attendance');
         }
     }
 }

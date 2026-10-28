@@ -10,7 +10,7 @@ use App\Repositories\AttendanceRepository;
 use App\Repositories\CourseSectionRepository;
 use App\Services\StudentMajorHistoryService;
 use App\Services\CourseEnrollmentService;
-use Exception;
+use App\Exceptions\UserFacingException;
 use Illuminate\Support\Collection;
 
 class StudentAttendanceService
@@ -44,7 +44,7 @@ class StudentAttendanceService
      * @param StudentCreateDTO $dto
      * @param int $courseSectionId
      * @return \App\Models\Student
-     * @throws Exception if no sessions are found.
+     * @throws UserFacingException if no sessions are found.
      */
     public function createStudentWithAttendances(StudentCreateDTO $dto, int $courseSectionId)
     {
@@ -54,7 +54,7 @@ class StudentAttendanceService
         // Get course section to find semester
         $courseSection = \App\Models\CourseSection::find($courseSectionId);
         if (!$courseSection) {
-            throw new Exception("Course section not found", 404);
+            throw new UserFacingException("Course section not found", 404);
         }
 
         // Track major change/history
@@ -76,7 +76,7 @@ class StudentAttendanceService
         $sessions = $this->courseSessionRepository->getSessionsByCourseSectionId($courseSectionId);
 
         if ($sessions->isEmpty()) {
-            throw new Exception("This course section doesn't have any session created", 400);
+            throw new UserFacingException("This course section doesn't have any session created", 400);
         }
 
         // Check if an attendance record already exists for the first session for this enrollment.

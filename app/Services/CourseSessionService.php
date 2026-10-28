@@ -7,22 +7,21 @@ use App\DTOs\Session\SessionListDTO;
 use App\Repositories\CourseSessionRepository;
 use App\Repositories\AttendanceRepository;
 use App\Models\CourseSection;
-use App\Repositories\CourseSectionRepository;
+use App\Repositories\CourseEnrollmentRepository;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class CourseSessionService
 {
-    protected CourseSectionRepository $courseSectionRepository;
+    protected CourseEnrollmentRepository $courseEnrollmentRepository;
     protected CourseSessionRepository $courseSessionRepository;
     protected AttendanceRepository $attendanceRepository;
 
     public function __construct(
-        CourseSectionRepository $courseSectionRepository,
+        CourseEnrollmentRepository $courseEnrollmentRepository,
         CourseSessionRepository $courseSessionRepository,
         AttendanceRepository $attendanceRepository
     ) {
-        $this->courseSectionRepository = $courseSectionRepository;
+        $this->courseEnrollmentRepository = $courseEnrollmentRepository;
         $this->courseSessionRepository = $courseSessionRepository;
         $this->attendanceRepository = $attendanceRepository;
     }
@@ -33,18 +32,15 @@ class CourseSessionService
      * @param SessionCreateDTO $dto
      * @param int $courseSectionId
      * @return \App\Models\CourseSession
-     * @throws Exception if course section is not found.
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException if course section is not found.
      */
     public function createSessionForCourseSection(SessionCreateDTO $dto, int $courseSectionId)
     {
         // Retrieve the CourseSection model.
-        $courseSection = CourseSection::find($courseSectionId);
-        if (!$courseSection) {
-            throw new Exception("Course section not found", 404);
-        }
+        $courseSection = CourseSection::findOrFail($courseSectionId);
 
         $session = null;
-        DB::transaction(function () use ($dto, $courseSection, &$session, $courseSectionId) {
+        DB::transaction(function () use ($dto, $courseSection, &$session) {
             // Create the new session.
             $session = $this->courseSessionRepository->createSession([
                 'course_section_id' => $courseSection->id,
@@ -53,11 +49,11 @@ class CourseSessionService
                 'session_end'       => $dto->sessionEnd,
             ]);
 
-            // Retrieve distinct student IDs already enrolled in this course section.
-            $studentIds = $this->courseSectionRepository->getDistinctStudentIdsByCourseSection($courseSectionId);
-            // For each student, create a new attendance record for the new session.
-            foreach ($studentIds as $studentId) {
-                $this->attendanceRepository->createSingleAttendanceForStudent($session->id, $studentId);
+            // Create an empty attendance record for the new session for every enrollment
+            // in this course section (same as the student import flow: any status, value null).
+            $enrollments = $this->courseEnrollmentRepository->findBySectionId($courseSection->id);
+            foreach ($enrollments as $enrollment) {
+                $this->attendanceRepository->createSingleAttendanceForEnrollment($session->id, $enrollment->id);
             }
         });
 
