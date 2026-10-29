@@ -19,6 +19,29 @@ if ! cmp -s /opt/vendor/.composer-lock.sha1 /var/www/vendor/.composer-lock.sha1;
   cp /opt/vendor/.composer-lock.sha1 /var/www/vendor/.composer-lock.sha1
 fi
 
+# Bring the database up to date before the API starts serving, so new code
+# never runs against an old schema. Only when starting the server, so one-off
+# commands like `php artisan migrate:status` still see pending migrations.
+# This only runs pending migrations: never a rollback, fresh or wipe. --force
+# skips the confirmation Laravel asks for in production. Postgres runs each
+# migration in a transaction, so one that fails changes nothing. The database
+# may still be starting (after a reboot both containers start together), so
+# keep trying for about a minute, then exit and let Docker restart us. This
+# runs before the permissions fix below, which hands any log file it creates
+# to www-data.
+if [ "$1" = "php-fpm" ]; then
+  attempt=1
+  until php artisan migrate --force; do
+    if [ "$attempt" -ge 30 ]; then
+      echo "entrypoint.sh: migrations failed $attempt times, not starting $1" >&2
+      exit 1
+    fi
+    echo "entrypoint.sh: migrations failed (attempt $attempt of 30), retrying in 2s" >&2
+    attempt=$((attempt + 1))
+    sleep 2
+  done
+fi
+
 # Make sure writable dirs exist + perms are correct (volumes can override image perms)
 mkdir -p /var/www/storage/logs \
          /var/www/storage/framework/{cache,sessions,views} \
